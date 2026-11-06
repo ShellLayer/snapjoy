@@ -21,6 +21,15 @@ on:
         options:
           - full
           - studio
+      target:
+        description: Build all platforms or verify one platform independently
+        type: choice
+        default: all
+        options:
+          - all
+          - macOS-Apple-Silicon
+          - macOS-Intel-Rosetta
+          - Windows-x64
   push:
     tags:
       - 'v*'
@@ -38,24 +47,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - name: macOS-Apple-Silicon
-            runner: macos-15
-            arch: arm64
-            tools-arch: arm64
-            command: npm run dist:mac -- --arm64
-          # Intel-hosted VMs expose no WebGL. Test x64 on the preinstalled Rosetta
-          # runtime so both architectures exercise the full graphics pipeline.
-          - name: macOS-Intel-Rosetta
-            runner: macos-15
-            arch: x64
-            tools-arch: arm64
-            command: npm run dist:mac -- --x64
-          - name: Windows-x64
-            runner: windows-2025
-            arch: x64
-            tools-arch: x64
-            command: npm run dist -- --publish never
+        # x64 Mac uses Rosetta because Intel-hosted VMs expose no WebGL.
+        include: ${{ fromJSON(
+          inputs.target == 'macOS-Apple-Silicon' && '[{"name":"macOS-Apple-Silicon","runner":"macos-15","arch":"arm64","tools-arch":"arm64","command":"npm run dist:mac -- --arm64"}]' ||
+          inputs.target == 'macOS-Intel-Rosetta' && '[{"name":"macOS-Intel-Rosetta","runner":"macos-15","arch":"x64","tools-arch":"arm64","command":"npm run dist:mac -- --x64"}]' ||
+          inputs.target == 'Windows-x64' && '[{"name":"Windows-x64","runner":"windows-2025","arch":"x64","tools-arch":"x64","command":"npm run dist -- --publish never"}]' ||
+          '[{"name":"macOS-Apple-Silicon","runner":"macos-15","arch":"arm64","tools-arch":"arm64","command":"npm run dist:mac -- --arm64"},{"name":"macOS-Intel-Rosetta","runner":"macos-15","arch":"x64","tools-arch":"arm64","command":"npm run dist:mac -- --x64"},{"name":"Windows-x64","runner":"windows-2025","arch":"x64","tools-arch":"x64","command":"npm run dist -- --publish never"}]') }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -116,7 +113,7 @@ jobs:
   publish:
     name: Publish verified downloads
     needs: build
-    if: startsWith(github.ref, 'refs/tags/v') || inputs.publish
+    if: (startsWith(github.ref, 'refs/tags/v') || inputs.publish) && (!inputs.target || inputs.target == 'all')
     runs-on: ubuntu-latest
     permissions:
       contents: write

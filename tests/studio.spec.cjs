@@ -102,7 +102,13 @@ test('silent video records the composed frame, pauses, plays, seeks, exports and
     await page.locator('[data-mode="video"].mode-button').click();await expect(page.locator('#recordAudio')).not.toBeChecked();
     await page.evaluate(()=>{
       window.recordTimes={};
-      for(const name of ['start','pause','resume','stop']){const fn=MediaRecorder.prototype[name];MediaRecorder.prototype[name]=function(...args){window.recordTimes[name]=performance.now();return fn.apply(this,args);};}
+      for(const name of ['start','pause','resume']){const fn=MediaRecorder.prototype[name];MediaRecorder.prototype[name]=function(...args){
+        if(name==='pause'){const result=fn.apply(this,args);window.recordTimes[name]=performance.now();return result;}
+        window.recordTimes[name]=performance.now();return fn.apply(this,args);
+      };}
+      // Measure the user's stop request, not work spent repainting disabled
+      // controls before MediaRecorder.stop() is called on slower machines.
+      document.getElementById('shutter').addEventListener('click',()=>{if(window.recordTimes.start!==undefined)window.recordTimes.stopRequested=performance.now();},{capture:true});
     });
     await page.locator('#shutter').click();await expect(page.locator('#recordingState')).toHaveText('录制中');
     await recordedSeconds(page,2);
@@ -112,7 +118,7 @@ test('silent video records the composed frame, pauses, plays, seeks, exports and
     await recordedSeconds(page,3);
     await page.locator('#shutter').click();await expect(page.locator('.recent-photo')).toHaveCount(1,{timeout:30000});
     const item=(await page.evaluate(()=>window.booth.listPhotos())).photos[0];
-    expect(item.kind).toBe('video');expect(item.audio).toBe(false);expect(item.frame).toBe('彩虹乐园');expect(item.duration).toBeGreaterThanOrEqual(3);const measured=await page.evaluate(()=>{const t=window.recordTimes;return (t.stop-t.start-(t.resume-t.pause))/1000;});expect(Math.abs(item.duration-measured)).toBeLessThan(.2);
+    expect(item.kind).toBe('video');expect(item.audio).toBe(false);expect(item.frame).toBe('彩虹乐园');expect(item.duration).toBeGreaterThanOrEqual(3);const measured=await page.evaluate(()=>{const t=window.recordTimes;return (t.stopRequested-t.start-(t.resume-t.pause))/1000;});expect(Math.abs(item.duration-measured)).toBeLessThan(.2);
     const content=await fs.readFile(path.join(dir,'photos',item.id+'.'+item.extension));expect(content.length).toBeGreaterThan(4000);
     await fs.writeFile(path.join(root,'test-results','recorded-silent.'+item.extension),content);
     const ranges=await page.evaluate(async url=>{
