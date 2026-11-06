@@ -11,6 +11,12 @@ async function launch(width=1280,height=720){
   try{
   const page=await app.firstWindow();await expect(page.locator('.effect-card')).toHaveCount(60,{timeout:process.env.CI?60000:15000});
   await page.evaluate(({width,height})=>{
+    const start=MediaRecorder.prototype.start;
+    MediaRecorder.prototype.start=function(...args){
+      window.testRecordingBytes=0;
+      this.addEventListener('dataavailable',event=>{window.testRecordingBytes+=event.data.size;});
+      return start.apply(this,args);
+    };
     const get=navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
     navigator.mediaDevices.getUserMedia=async options=>{
       const stream=await get(options.video?{...options,video:{...options.video,width:{exact:width},height:{exact:height},frameRate:{ideal:15,max:15}}}:options);
@@ -22,7 +28,11 @@ async function launch(width=1280,height=720){
   }catch(error){await close(app);throw error;}
 }
 async function close(app){await app.evaluate(({BrowserWindow})=>BrowserWindow.getAllWindows().forEach(w=>w.destroy())).catch(()=>{});await app.close();}
-async function recordedSeconds(page,seconds){await expect.poll(async()=>{const t=(await page.locator('#recordingTime').textContent()).split(':').map(Number);return t[0]*60+t[1];}).toBeGreaterThanOrEqual(seconds);}
+async function recordedSeconds(page,seconds){
+  await expect.poll(async()=>{const t=(await page.locator('#recordingTime').textContent()).split(':').map(Number);return t[0]*60+t[1];}).toBeGreaterThanOrEqual(seconds);
+  // A running clock alone does not mean a cold encoder has emitted a frame.
+  await expect.poll(()=>page.evaluate(()=>window.testRecordingBytes||0),{timeout:45000}).toBeGreaterThan(0);
+}
 async function activate(page){await page.locator('#startCamera').click();await expect(page.locator('#cameraStatus')).toHaveText('正在取景');}
 
 test('five aspect ratios save their actual dimensions without stretching; focus view expands preview',async()=>{

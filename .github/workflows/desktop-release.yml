@@ -30,6 +30,10 @@ on:
           - macOS-Apple-Silicon
           - macOS-Intel-Rosetta
           - Windows-x64
+      test_pattern:
+        description: Optional studio test pattern for rechecking an isolated failure
+        type: string
+        default: ''
   push:
     tags:
       - 'v*'
@@ -73,7 +77,9 @@ jobs:
         run: npm test
       - name: Run camera and recording regression tests
         if: inputs.checks == 'studio'
-        run: npm test -- tests/studio.spec.cjs --max-failures=0
+        env:
+          SNAPJOY_TEST_PATTERN: ${{ inputs.test_pattern }}
+        run: node tools/run-studio-tests.cjs
       - name: Build native packages
         run: ${{ matrix.command }}
       - name: Verify macOS bundle metadata and signature
