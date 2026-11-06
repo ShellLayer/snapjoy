@@ -114,14 +114,17 @@ test('silent video records the composed frame, pauses, plays, seeks, exports and
     const item=(await page.evaluate(()=>window.booth.listPhotos())).photos[0];
     expect(item.kind).toBe('video');expect(item.audio).toBe(false);expect(item.frame).toBe('彩虹乐园');expect(item.duration).toBeGreaterThanOrEqual(3);const measured=await page.evaluate(()=>{const t=window.recordTimes;return (t.stop-t.start-(t.resume-t.pause))/1000;});expect(Math.abs(item.duration-measured)).toBeLessThan(.2);
     const content=await fs.readFile(path.join(dir,'photos',item.id+'.'+item.extension));expect(content.length).toBeGreaterThan(4000);
+    await fs.writeFile(path.join(root,'test-results','recorded-silent.'+item.extension),content);
     await page.locator('.recent-photo').click();await expect(page.locator('#fullVideo')).toBeVisible();
     const playback=await page.locator('#fullVideo').evaluate(async video=>{
       await video.play();await new Promise(resolve=>setTimeout(resolve,350));
       const c=document.createElement('canvas');c.width=video.videoWidth;c.height=video.videoHeight;const x=c.getContext('2d');x.drawImage(video,0,0);
       const corner=Array.from(x.getImageData(2,2,1,1).data),stream=video.captureStream();
-      const result={width:video.videoWidth,height:video.videoHeight,time:video.currentTime,audio:stream.getAudioTracks().length,corner};stream.getTracks().forEach(t=>t.stop());video.pause();
+      const ranges=value=>Array.from({length:value.length},(_,i)=>[value.start(i),value.end(i)]);
+      const result={width:video.videoWidth,height:video.videoHeight,time:video.currentTime,duration:video.duration,seekable:ranges(video.seekable),buffered:ranges(video.buffered),audio:stream.getAudioTracks().length,corner};stream.getTracks().forEach(t=>t.stop());video.pause();
       await new Promise((resolve,reject)=>{video.addEventListener('seeked',resolve,{once:true});video.addEventListener('error',()=>reject(new Error('seek failed')),{once:true});video.currentTime=1;});result.seek=video.currentTime;return result;
     });
+    console.log('Recorded playback verification',JSON.stringify({format:item.extension,recordedDuration:item.duration,...playback}));
     expect([playback.width,playback.height]).toEqual([640,360]);expect(playback.time).toBeGreaterThan(0);expect(playback.seek).toBeCloseTo(1);expect(playback.audio).toBe(0);expect(playback.corner[0]).toBeGreaterThan(playback.corner[1]+40);
     const exportPath=path.join(dir,'export.'+item.extension);await app.evaluate(({dialog},filePath)=>{dialog.showSaveDialog=async()=>({canceled:false,filePath});},exportPath);
     await page.locator('#exportPhoto').click();await expect(page.locator('#toastText')).toHaveText('作品已另存。');expect((await fs.readFile(exportPath)).equals(content)).toBe(true);
