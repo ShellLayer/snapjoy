@@ -38,9 +38,9 @@ const executablePath = isMac
     const stickers=await page.locator('.sticker-card').count();
     if(stickers!==96)throw new Error('Sticker catalog missing in package');
     await page.getByRole('button',{name:'添加兔耳朵',exact:true}).click();
-    await page.waitForFunction(()=>/正在寻找人脸|正在跟随主要人脸|跟随暂不可用/.test(document.querySelector('#faceStatus').textContent),{timeout:20000});
+    await page.waitForFunction(()=>/正在寻找人脸|正在跟随主要人脸|跟随暂不可用/.test(document.querySelector('#faceStatus').textContent),{timeout:65000});
     const trackingStatus=await page.locator('#faceStatus').textContent();
-    if(trackingStatus.includes('不可用'))throw new Error('Packaged face tracker failed to load');
+    if(trackingStatus.includes('不可用'))throw new Error('Packaged face tracker failed to load: '+await page.locator('#faceStatus').getAttribute('title'));
     await page.locator('[data-panel="frames"]').click();
     const frames=await page.locator('.frame-card').count()-1;
     if(frames!==12)throw new Error('Frame catalog missing in package');

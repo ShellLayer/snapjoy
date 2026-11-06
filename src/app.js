@@ -523,6 +523,7 @@ function drawDecorations() {
   scene.draw(decorationContext,decorationCanvas.width,decorationCanvas.height,panel === 'stickers' && !captureTask);
 }
 function updateFaceStatus() {
+  $('faceStatus').title = tracker.lastError || '';
   if (!scene.nodes.some(n=>n.follow)) { $('faceStatus').textContent=''; return; }
   $('faceStatus').textContent = !running ? '开启摄像头后，头饰可跟着你动。' :
     tracker.status==='loading' || tracker.status==='idle' ? '正在准备本地人脸跟随…' :

@@ -31,18 +31,20 @@ export class FaceTracker {
   constructor(onFace,onStatus=()=>{}){
     this.onFace=onFace;this.onStatus=onStatus;this.status='idle';this.worker=null;this.busy=false;
     this.face=null;this.lastFound=0;this.lastSent=0;this.lastVideo=-1;this.generation=0;
+    this.lastError='';
     this.canvas=document.createElement('canvas');this.canvas.width=320;this.canvas.height=240;
     this.context=this.canvas.getContext('2d',{alpha:false});
   }
   setStatus(status){if(this.status!==status){this.status=status;this.onStatus(status);}}
   ensure(){
     if(this.status!=='idle')return;
+    this.lastError='';
     this.setStatus('loading');
     try{
       this.worker=new Worker(new URL('./face-worker.js',import.meta.url),{type:'module'});
       this.worker.onmessage=({data})=>{
         if(data.type==='ready'){clearTimeout(this.initTimeout);this.setStatus('ready');}
-        if(data.type==='error'){clearTimeout(this.initTimeout);this.busy=false;this.face=null;this.onFace(null);this.setStatus('error');this.worker.terminate();}
+        if(data.type==='error'){clearTimeout(this.initTimeout);this.lastError=data.message||'本地人脸定位未能启动';this.busy=false;this.face=null;this.onFace(null);this.setStatus('error');this.worker.terminate();}
         if(data.type==='result'){
           this.busy=false;
           if(data.generation!==this.generation)return;
@@ -52,10 +54,10 @@ export class FaceTracker {
           this.onFace(this.face);
         }
       };
-      this.worker.onerror=()=>{clearTimeout(this.initTimeout);this.busy=false;this.face=null;this.onFace(null);this.setStatus('error');this.worker?.terminate();};
-      this.initTimeout=setTimeout(()=>{if(this.status==='loading'){this.worker.terminate();this.setStatus('error');}},20000);
+      this.worker.onerror=(event)=>{clearTimeout(this.initTimeout);this.lastError=event.message||'本地人脸定位线程未能启动';this.busy=false;this.face=null;this.onFace(null);this.setStatus('error');this.worker?.terminate();};
+      this.initTimeout=setTimeout(()=>{if(this.status==='loading'){this.lastError='首次准备人脸跟随超时，可关闭摄像头后重试。';this.worker.terminate();this.setStatus('error');}},60000);
       this.worker.postMessage({type:'init'});
-    }catch{this.setStatus('error');}
+    }catch(error){this.lastError=String(error.message||error);this.setStatus('error');}
   }
   async step(video,mirror,now){
     this.ensure();
@@ -71,6 +73,6 @@ export class FaceTracker {
       this.worker.postMessage({type:'frame',bitmap,timestamp:now,generation},[bitmap]);
     }catch{this.busy=false;this.setStatus('error');}
   }
-  reset(){this.generation++;this.face=null;this.lastVideo=-1;this.onFace(null);}
+  reset(){this.generation++;this.face=null;this.lastVideo=-1;this.onFace(null);if(this.status==='error'){clearTimeout(this.initTimeout);this.worker?.terminate();this.worker=null;this.busy=false;this.setStatus('idle');}}
   close(){clearTimeout(this.initTimeout);this.worker?.terminate();}
 }
