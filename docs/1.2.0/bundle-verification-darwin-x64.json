@@ -1,0 +1,13 @@
+{
+  "passed": true,
+  "platform": "darwin",
+  "arch": "x64",
+  "verificationHostArch": "arm64",
+  "version": "1.2.0",
+  "minimumMacOS": "13.0",
+  "cameraDescription": "SnapJoy 使用摄像头进行实时特效预览和拍照，画面与照片只在本机处理和保存。",
+  "signature": "ad-hoc",
+  "notarized": false,
+  "architecture": "x86_64",
+  "checkedAt": "2026-11-06T13:44:49.067Z"
+}

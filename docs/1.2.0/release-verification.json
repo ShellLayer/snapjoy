@@ -1,0 +1,25 @@
+{
+  "version": "1.2.0",
+  "release": "https://github.com/ShellLayer/snapjoy/releases/tag/v1.2.0",
+  "prerelease": true,
+  "workflow": "https://github.com/ShellLayer/snapjoy/actions/runs/42225940552",
+  "sourceCommit": "4679ec7237ae04416251c72a263bff708c3a0cd6",
+  "installers": [
+    {
+      "name": "SnapJoy-1.2.0-macOS-arm64.dmg",
+      "url": "https://github.com/ShellLayer/snapjoy/releases/download/v1.2.0/SnapJoy-1.2.0-macOS-arm64.dmg",
+      "bytes": 129713961,
+      "sha256": "bbcec9948108ac9ffef8fe112c162fdc4786970dc9d689d1f945eb4d58e8a8dc",
+      "downloadVerified": true,
+      "anonymousAccessVerified": true
+    },
+    {
+      "name": "SnapJoy-1.2.0-macOS-x64.dmg",
+      "url": "https://github.com/ShellLayer/snapjoy/releases/download/v1.2.0/SnapJoy-1.2.0-macOS-x64.dmg",
+      "bytes": 135447076,
+      "sha256": "a93796a8ccf717cc9b0fde0870c17bd2a7557a9fd91f880108761c7e8cd974f3",
+      "downloadVerified": true,
+      "anonymousAccessVerified": true
+    }
+  ]
+}

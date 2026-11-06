@@ -1,0 +1,24 @@
+{
+  "passed": true,
+  "version": "1.2.0",
+  "platform": "win32",
+  "arch": "x64",
+  "testHostArch": "x64",
+  "translated": false,
+  "packaged": true,
+  "title": "拾光相机 · SnapJoy",
+  "effects": 48,
+  "cameraOff": true,
+  "isolated": true,
+  "windowAPI": true,
+  "camera": {
+    "width": 1920,
+    "height": 1080,
+    "audioTracks": 0
+  },
+  "stickers": 96,
+  "frames": 12,
+  "trackingStatus": "正在寻找人脸 · 贴纸暂固定，可拖动改为手动",
+  "testSource": "simulated camera; no photos captured",
+  "checkedAt": "2026-11-06T13:38:17.916Z"
+}

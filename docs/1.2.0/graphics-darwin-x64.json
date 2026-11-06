@@ -1,0 +1,8 @@
+{
+  "args": [],
+  "appArch": "x64",
+  "testHostArch": "arm64",
+  "webgl": true,
+  "webgl2": true,
+  "renderer": "WebKit WebGL"
+}
