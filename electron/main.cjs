@@ -175,6 +175,7 @@ function setupProtocol() {
       if (media) {
         assertId(media[2]);
         const file = media[1] === 'photo' ? photoPath(media[2]) : media[1] === 'thumb' ? thumbPath(media[2]) : path.join(photoDir,media[2]+'.'+media[3]);
+        if (media[1] === 'video' && ['mp4','webm'].includes(media[3])) return await require('./video-response.cjs')(file, request, media[3]);
         return net.fetch(pathToFileURL(file).toString(), {headers: request.headers});
       }
       const filename = pathname === '/' ? 'index.html' : pathname.slice(1);

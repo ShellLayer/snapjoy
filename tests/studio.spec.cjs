@@ -115,6 +115,12 @@ test('silent video records the composed frame, pauses, plays, seeks, exports and
     expect(item.kind).toBe('video');expect(item.audio).toBe(false);expect(item.frame).toBe('彩虹乐园');expect(item.duration).toBeGreaterThanOrEqual(3);const measured=await page.evaluate(()=>{const t=window.recordTimes;return (t.stop-t.start-(t.resume-t.pause))/1000;});expect(Math.abs(item.duration-measured)).toBeLessThan(.2);
     const content=await fs.readFile(path.join(dir,'photos',item.id+'.'+item.extension));expect(content.length).toBeGreaterThan(4000);
     await fs.writeFile(path.join(root,'test-results','recorded-silent.'+item.extension),content);
+    const ranges=await page.evaluate(async url=>{
+      const read=async range=>{const r=await fetch(url,{headers:{Range:range}});return {status:r.status,range:r.headers.get('content-range'),length:r.headers.get('content-length'),bytes:Array.from(new Uint8Array(await r.arrayBuffer()))};};
+      return {prefix:await read('bytes=0-31'),suffix:await read('bytes=-16'),invalid:await read('bytes=999999999-')};
+    },item.url);
+    expect(ranges.prefix).toEqual({status:206,range:'bytes 0-31/'+content.length,length:'32',bytes:Array.from(content.subarray(0,32))});
+    expect(ranges.suffix.status).toBe(206);expect(ranges.suffix.bytes).toEqual(Array.from(content.subarray(-16)));expect(ranges.invalid.status).toBe(416);
     await page.locator('.recent-photo').click();await expect(page.locator('#fullVideo')).toBeVisible();
     const playback=await page.locator('#fullVideo').evaluate(async video=>{
       await video.play();await new Promise(resolve=>setTimeout(resolve,350));

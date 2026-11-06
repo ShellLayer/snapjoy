@@ -63,8 +63,17 @@ const executablePath = isMac
       if(!recordedVideo||recordedVideo.bytes<1000||recordedVideo.audio)throw new Error('Packaged video did not save correctly');
       await page.locator('[data-photo-id="'+recordedVideo.id+'"]').click();
       await page.waitForFunction(()=>document.querySelector('#fullVideo').readyState>=2,null,{timeout:30000});
+      const seek=await page.locator('#fullVideo').evaluate(async video=>{
+        await new Promise((resolve,reject)=>{
+          const timer=setTimeout(()=>reject(new Error('Packaged video could not seek')),15000);
+          video.addEventListener('seeked',()=>{clearTimeout(timer);resolve();},{once:true});
+          video.currentTime=.5;
+        });
+        return video.currentTime;
+      });
+      if(Math.abs(seek-.5)>.01)throw new Error('Packaged video seek returned to the beginning');
       await page.locator('[data-close="photoDialog"]').click();
-      recordedVideo={width:recordedVideo.width,height:recordedVideo.height,format:recordedVideo.extension,bytes:recordedVideo.bytes,playable:true};
+      recordedVideo={width:recordedVideo.width,height:recordedVideo.height,format:recordedVideo.extension,bytes:recordedVideo.bytes,playable:true,seekable:true};
     }
     await page.locator('#powerButton').click();
     const packaged=await app.evaluate(({app})=>app.isPackaged);
