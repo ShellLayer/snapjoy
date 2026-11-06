@@ -1,0 +1,16 @@
+{
+  "passed": true,
+  "packaged": true,
+  "title": "拾光相机 · Lumi Booth",
+  "effects": 18,
+  "cameraOff": true,
+  "isolated": true,
+  "windowAPI": true,
+  "camera": {
+    "width": 1920,
+    "height": 1080,
+    "audioTracks": 0
+  },
+  "testSource": "simulated camera; no photos captured",
+  "checkedAt": "2026-11-06T03:26:19.962Z"
+}

@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self'; style-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-src 'none'">
+  <title>拾光相机 · SnapJoy</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="playroom.css">
+</head>
+<body>
+  <div class="titlebar">
+    <span class="titlebar-label">SNAPJOY</span>
+    <div class="window-actions">
+      <button data-window="minimize" aria-label="最小化" title="最小化"><span data-icon="minus"></span></button>
+      <button data-window="maximize" aria-label="最大化或还原" title="最大化 / 还原"><span data-icon="square"></span></button>
+      <button data-window="close" aria-label="关闭窗口" title="关闭"><span data-icon="x"></span></button>
+    </div>
+  </div>
+  <header class="app-header">
+    <a class="brand" href="#" aria-label="拾光相机首页">
+      <span class="brand-mark"><span data-icon="camera"></span><i></i></span>
+      <span><strong>拾光相机<span class="brand-dot">.</span></strong><small>A LITTLE MOMENT, A LOT OF YOU.</small></span>
+    </a>
+    <div class="header-right">
+      <span class="local-badge"><span data-icon="shield"></span>只在你的电脑里</span>
+      <button id="helpButton" class="icon-button" title="使用帮助" aria-label="使用帮助"><span data-icon="help"></span></button>
+      <button id="albumButton" class="soft-button"><span data-icon="images"></span>我的相册<span id="albumCount" class="count">0</span></button>
+    </div>
+  </header>
+
+  <main class="workspace">
+    <section class="camera-column" aria-label="拍照工作区">
+      <div class="section-line">
+        <div class="section-title"><span class="eyebrow">THE PHOTO BOOTH</span><h1>今天，也值得被记录。</h1></div>
+        <div id="cameraStatus" class="camera-status"><i></i><span>相机未开启</span></div>
+      </div>
+      <div class="viewfinder" id="viewfinder">
+        <video id="cameraVideo" autoplay playsinline muted hidden></video>
+        <canvas id="preview" width="1280" height="960" aria-label="摄像头实时特效预览"></canvas>
+        <canvas id="decorationCanvas" width="1280" height="960" aria-label="贴纸编辑画布，可拖动贴纸" hidden></canvas>
+        <div id="welcome" class="welcome">
+          <div class="welcome-orbit orbit-one"></div><div class="welcome-orbit orbit-two"></div>
+          <div class="viewfinder-corners"><i></i><i></i><i></i><i></i></div>
+          <div class="welcome-content">
+            <div class="camera-illustration"><span data-icon="camera"></span><span class="spark spark-one">✦</span><span class="spark spark-two">✧</span></div>
+            <span class="welcome-kicker">MAKE ROOM FOR A LITTLE FUN</span>
+            <h2 id="welcomeTitle">让这一刻，<br>有点不一样。</h2>
+            <p id="welcomeDescription">选一个喜欢的特效，把好心情留在这里。</p>
+            <button id="startCamera" class="start-button"><span data-icon="camera"></span><span>开启摄像头</span><span data-icon="arrow-right"></span></button>
+            <button id="cameraSettings" class="text-button light" hidden>打开 Windows 摄像头设置</button>
+            <small id="welcomeFootnote">准备好后再开启 · 无需登录</small>
+          </div>
+          <span class="welcome-bottom">HELLO, YOU.</span>
+        </div>
+        <div id="previewHud" class="preview-hud" hidden>
+          <span class="live-badge"><i></i>LIVE</span>
+          <span id="activeEffectBadge">原片</span>
+        </div>
+        <div id="gridOverlay" class="grid-overlay" hidden><i></i><i></i><i></i><i></i></div>
+        <div id="countdownOverlay" class="countdown-overlay" hidden aria-live="assertive"><span id="countdownNumber"></span><small id="countdownLabel"></small></div>
+        <div id="flashOverlay" class="flash-overlay"></div>
+        <button id="cancelCapture" class="cancel-capture" hidden>取消拍摄 <kbd>Esc</kbd></button>
+        <div id="burstProgress" class="burst-progress" hidden></div>
+      </div>
+      <div class="viewfinder-meta">
+        <label class="device-picker"><span data-icon="webcam"></span><select id="cameraSelect" aria-label="选择摄像头"><option value="">系统默认摄像头</option></select></label>
+        <div class="viewfinder-options">
+          <span id="resolutionLabel">照片自动保存</span>
+          <button id="gridButton" class="tiny-button" aria-label="构图网格" aria-pressed="false" title="构图网格"><span data-icon="grid"></span></button>
+          <button id="powerButton" class="tiny-button" aria-label="关闭摄像头" title="关闭摄像头" disabled><span data-icon="power"></span></button>
+        </div>
+      </div>
+      <div class="capture-controls">
+        <div class="mode-control" role="group" aria-label="拍摄模式">
+          <button class="mode-button active" data-mode="single" aria-pressed="true" title="单张照片"><span data-icon="square"></span>单张</button>
+          <button class="mode-button" data-mode="strip" aria-pressed="false" title="连续拍摄四张，生成照片条"><span data-icon="film"></span>四连拍</button>
+        </div>
+        <div class="shutter-wrap"><button id="shutter" class="shutter" aria-label="拍照" title="拍照（空格键）" disabled><span data-icon="camera"></span></button><span id="shutterHint">按 <kbd>空格</kbd> 拍照</span></div>
+        <div class="capture-options">
+          <label class="timer-control" title="拍照倒计时"><span data-icon="timer"></span><select id="timerSelect" aria-label="倒计时"><option value="0">即拍</option><option value="3" selected>3 秒</option><option value="5">5 秒</option><option value="10">10 秒</option></select></label>
+          <button id="mirrorButton" class="icon-button selected" aria-label="镜像" aria-pressed="true" title="镜像预览与照片"><span data-icon="mirror"></span></button>
+        </div>
+      </div>
+      <section class="recent-section">
+        <div class="recent-heading"><h2>刚刚的好时光 <span id="recentCount">0</span></h2><button id="folderButton" class="text-button"><span data-icon="folder"></span>照片文件夹<span data-icon="arrow-up-right"></span></button></div>
+        <div id="recentPhotos" class="recent-photos"></div>
+        <div id="emptyGallery" class="empty-gallery"><div class="empty-frames"><i><span data-icon="sun"></span></i><i><span data-icon="smile"></span></i></div><div><strong>第一张，就从现在开始。</strong><p>拍下的照片会出现在这里。</p></div></div>
+      </section>
+    </section>
+
+    <aside class="effects-panel" aria-label="特效与贴纸">
+      <div class="effects-heading"><div><span class="eyebrow">LET YOUR IMAGINATION PLAY</span><h2>今天变成谁<span>✦</span></h2></div><button id="randomLook" class="random-look" title="随机搭配特效、贴纸和相框">🎲<small>换个造型</small></button></div>
+      <div class="play-tabs" role="group" aria-label="装扮类型"><button class="active" data-panel="effects" aria-pressed="true">特效 <span id="effectTotal">48</span></button><button data-panel="stickers" aria-pressed="false">贴纸 <span id="stickerTotal">96</span></button><button data-panel="frames" aria-pressed="false">相框 <span id="frameTotal">12</span></button></div>
+      <div class="catalog-search"><input id="catalogSearch" type="search" placeholder="搜索特效，例如：大头" aria-label="搜索特效、贴纸或相框"><button id="resetLook" title="恢复原片，清空贴纸和相框" aria-label="重置造型">重置</button></div>
+      <div id="effectTabs" class="effect-tabs" role="group" aria-label="特效分类"><button data-category="all" class="active" aria-pressed="true">全部</button><button data-category="style" aria-pressed="false">氛围</button><button data-category="fun" aria-pressed="false">搞怪</button><button data-category="art" aria-pressed="false">绘画</button></div>
+      <div id="stickerTabs" class="sticker-tabs" role="group" aria-label="贴纸分类" hidden></div>
+      <div class="effect-scroll">
+        <div id="effectGrid" class="effect-grid"></div>
+        <div id="stickerGrid" class="sticker-grid" hidden></div>
+        <div id="frameGrid" class="frame-grid" hidden></div>
+        <p id="noCatalogResults" class="catalog-empty" hidden>没找到，换个关键词试试。</p>
+      </div>
+      <div id="effectSettings" class="effect-settings"><div class="strength-label"><label for="intensity">特效强度</label><span id="intensityValue">75%</span></div><input id="intensity" type="range" min="0" max="100" value="75" aria-label="特效强度"><div class="effect-note"><span data-icon="sparkles"></span><span id="effectDescription">不加修饰，就很好看。</span></div></div>
+      <div id="stickerSettings" class="sticker-settings" hidden>
+        <div class="sticker-toolbar"><span>已贴 <b id="placedCount">0</b> / 20</span><button id="undoSticker" title="撤销上一步装饰操作">撤销</button><button id="clearStickers">清空贴纸</button></div>
+        <div id="stickerEditor" hidden>
+          <div class="selected-sticker-title"><strong id="selectedStickerName"></strong><button id="removeSticker" class="tiny-button" title="移除选中贴纸" aria-label="移除选中贴纸"><span data-icon="trash"></span></button></div>
+          <div class="sticker-slider"><label for="stickerSize">大小</label><input id="stickerSize" type="range" min="35" max="250" value="100" aria-label="贴纸大小"><output id="stickerSizeValue">100%</output></div>
+          <div class="sticker-slider"><label for="stickerRotation">旋转</label><input id="stickerRotation" type="range" min="-180" max="180" value="0" aria-label="贴纸旋转"><output id="stickerRotationValue">0°</output></div>
+          <div class="sticker-tools"><label><input id="followFace" type="checkbox">跟随人脸</label><button id="duplicateSticker">复制</button><button id="frontSticker">置顶</button></div>
+        </div>
+        <p id="stickerHint" class="sticker-hint">点选贴纸后，在画面上拖动摆放。</p>
+        <p id="faceStatus" class="face-status"></p>
+      </div>
+      <div id="frameSettings" class="frame-settings" hidden><span id="selectedFrameName">当前：不加相框</span><small>可与特效、贴纸自由搭配</small></div>
+      <div class="effects-footer"><span class="mini-dot"></span><span id="effectsPreviewNote">开启相机后，实时预览每一种特效</span></div>
+    </aside>
+  </main>
+  <footer class="app-footer"><span>拾起日常里的微光。</span><span>SNAPJOY <i>✦</i> MADE FOR YOUR MOMENTS</span></footer>
+
+  <dialog id="albumDialog" class="album-dialog">
+    <div class="dialog-heading"><div><span class="eyebrow">YOUR LITTLE COLLECTION</span><h2>我的相册 <span id="dialogPhotoCount">0</span></h2></div><button class="icon-button" data-close="albumDialog" aria-label="关闭相册"><span data-icon="x"></span></button></div>
+    <div id="albumGrid" class="album-grid"></div><p id="albumEmpty" class="dialog-empty">还没有照片。回到相机，留住你的第一个瞬间。</p>
+    <div class="album-footer"><span>原图保存在电脑的「图片 / 拾光相机」文件夹</span><button id="albumFolder" class="soft-button"><span data-icon="folder"></span>打开文件夹</button></div>
+  </dialog>
+  <dialog id="photoDialog" class="photo-dialog">
+    <div class="photo-topbar"><span id="photoInfo"></span><button class="icon-button" data-close="photoDialog" aria-label="关闭照片"><span data-icon="x"></span></button></div>
+    <div class="photo-stage"><button id="previousPhoto" class="photo-arrow" aria-label="上一张"><span data-icon="chevron-left"></span></button><img id="fullPhoto" alt="拍摄的照片"><button id="nextPhoto" class="photo-arrow" aria-label="下一张"><span data-icon="chevron-right"></span></button></div>
+    <div class="photo-actions"><button id="deletePhoto" class="text-button danger"><span data-icon="trash"></span>删除</button><div><button id="showPhoto" class="soft-button"><span data-icon="folder"></span>在文件夹中查看</button><button id="exportPhoto" class="primary-button"><span data-icon="download"></span>另存为</button></div></div>
+    <div id="deleteConfirmation" class="delete-confirmation" hidden><p>将这张照片移到回收站？</p><small>需要时可以从 Windows 回收站恢复原图。</small><div><button id="cancelDelete" class="soft-button">保留</button><button id="confirmDelete" class="primary-button">移到回收站</button></div></div>
+  </dialog>
+  <dialog id="helpDialog" class="help-dialog">
+    <div class="dialog-heading"><div><span class="eyebrow">A SMALL GUIDE</span><h2>你好，欢迎来到拾光。</h2></div><button class="icon-button" data-close="helpDialog" aria-label="关闭帮助"><span data-icon="x"></span></button></div>
+    <div class="help-body"><p>连接摄像头，点击「开启摄像头」，开始今天的变装游戏。</p><div class="help-step"><b>01</b><div><strong>特效、贴纸、相框，自由搭配</strong><p>48 种效果、96 款贴纸、12 款相框。搜索喜欢的动物或造型，也可点击骰子随机搭配。</p></div></div><div class="help-step"><b>02</b><div><strong>动动脑袋，拖拖贴纸</strong><p>头饰和眼镜默认跟随画面中的主要一张脸。拖动贴纸即可改为手动；在贴纸面板调整大小、旋转或重新勾选跟随。可叠加 20 张，支持撤销。强烈变形时可关闭跟随手动微调。</p></div></div><div class="help-step"><b>03</b><div><strong>把造型一起拍下来</strong><p>单张和四连拍都会保存贴纸、相框。照片自动保存在「图片 / 拾光相机」，可另存或移到回收站。</p></div></div><div class="keyboard-help"><span><kbd>空格</kbd> 拍照</span><span><kbd>Esc</kbd> 取消 / 关闭</span><span><kbd>Delete</kbd> 移除贴纸</span></div><p class="privacy-copy"><span data-icon="shield"></span>摄像头画面、贴纸跟随和照片都在本机处理，无需联网，不采集声音。人脸定位只用于放置贴纸，不识别身份。</p><button id="helpCameraSettings" class="text-button">摄像头打不开？查看 Windows 隐私设置<span data-icon="arrow-up-right"></span></button></div>
+  </dialog>
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden><span data-icon="check"></span><span id="toastText"></span><button id="toastRetry" hidden>重试保存</button></div>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
