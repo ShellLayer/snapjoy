@@ -180,7 +180,7 @@ export function drawFrame(c,frameId,width,height) {
     const unit=width/800,border=22*unit;
     x.fillStyle=f.colors[0];
     x.fillRect(0,0,width,border);x.fillRect(0,height-border,width,border);x.fillRect(0,0,border,height);x.fillRect(width-border,0,border,height);
-    const stamp=(emoji,px,py,size=40,angle=0)=>{x.save();x.translate(px*width,py*height);x.rotate(angle);x.font=size*unit+'px "Segoe UI Emoji"';x.textAlign='center';x.textBaseline='middle';x.fillText(emoji,0,0);x.restore();};
+    const stamp=(emoji,px,py,size=40,angle=0)=>{x.save();x.translate(px*width,py*height);x.rotate(angle);x.font=size*unit+'px "Segoe UI Emoji", "Apple Color Emoji", sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText(emoji,0,0);x.restore();};
     if(frameId==='instant'){
       x.fillRect(0,height-68*unit,width,68*unit);x.fillStyle='#988e7c';x.textAlign='center';x.font=14*unit+'px Georgia';x.fillText('LITTLE MOMENTS, BIG SMILES',width/2,height-26*unit);
     }else if(frameId==='rainbow'){

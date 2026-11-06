@@ -6,6 +6,15 @@ import { FaceTracker } from './face-tracker.js';
 const $ = (id) => document.getElementById(id);
 hydrateIcons();
 const api = window.booth;
+const isMac = api.platform === 'darwin';
+document.documentElement.classList.toggle('platform-mac', isMac);
+if (isMac) {
+  $('cameraSettings').textContent = '打开 Mac 摄像头设置';
+  $('helpCameraSettings').firstChild.textContent = '摄像头打不开？查看 Mac 隐私设置';
+  $('deleteRecoveryHint').textContent = '需要时可以从 Mac 废纸篓恢复原图。';
+  $('deleteConfirmation').querySelector('p').textContent = '将这张照片移到废纸篓？';
+  $('confirmDelete').textContent = '移到废纸篓';
+}
 const video = $('cameraVideo');
 let preview = $('preview');
 const sample = createSample();
@@ -207,6 +216,9 @@ async function startCamera(deviceId = '') {
   let stream;
   try {
     if (!navigator.mediaDevices?.getUserMedia) throw new Error('摄像头服务不可用，请重新打开软件。');
+    const authorized = await api.requestCameraAccess();
+    if (request !== cameraRequest) return;
+    if (!authorized) throw new DOMException('Camera permission denied', 'NotAllowedError');
     stream = await navigator.mediaDevices.getUserMedia({
       video: { width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 30, max: 30 }, ...(deviceId ? { deviceId: { exact: deviceId } } : {}) },
       audio: false
@@ -234,7 +246,9 @@ async function startCamera(deviceId = '') {
     if (request !== cameraRequest) return;
     releaseStream();
     const messages = {
-      NotAllowedError: ['需要开启摄像头权限', '在 Windows 设置里允许桌面应用访问摄像头，然后回来重试。', true],
+      NotAllowedError: ['需要开启摄像头权限', isMac
+        ? '在系统设置 → 隐私与安全性 → 摄像头中允许拾光相机，然后退出并重新打开软件。'
+        : '在 Windows 设置里允许桌面应用访问摄像头，然后回来重试。', true],
       NotFoundError: ['还没找到摄像头', '请连接内置或 USB 摄像头，并确认设备已启用。', false],
       NotReadableError: ['摄像头暂时打不开', '请关闭正在占用摄像头的会议或拍照软件，再试一次。', true],
       OverconstrainedError: ['这台摄像头暂不可用', '请重新选择摄像头，或拔插 USB 摄像头后再试。', false],
@@ -459,7 +473,7 @@ $('confirmDelete').addEventListener('click', async () => {
       if (photos.length) showPhoto(photos[Math.min(index, photos.length - 1)].id);
       else $('photoDialog').close();
     }
-    toast('已移到回收站。');
+    toast(isMac ? '已移到废纸篓。' : '已移到回收站。');
   }
   $('confirmDelete').disabled = false;
 });

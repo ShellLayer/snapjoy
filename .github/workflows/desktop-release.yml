@@ -1,0 +1,109 @@
+name: Build desktop packages
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish verified packages to a GitHub prerelease
+        type: boolean
+        default: true
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build ${{ matrix.name }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macOS-Apple-Silicon
+            runner: macos-15
+            arch: arm64
+            command: npm run dist:mac -- --arm64
+          - name: macOS-Intel
+            runner: macos-15-intel
+            arch: x64
+            command: npm run dist:mac -- --x64
+          - name: Windows-x64
+            runner: windows-2025
+            arch: x64
+            command: npm run dist -- --publish never
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Run functional and platform tests
+        run: npm test
+      - name: Build native packages
+        run: ${{ matrix.command }}
+      - name: Check packaged app
+        run: npm run smoke:package
+      - name: Verify macOS bundle metadata and signature
+        if: runner.os == 'macOS'
+        run: node tools/verify-mac-bundle.cjs
+      - name: Check Windows portable app
+        if: runner.os == 'Windows'
+        run: node tools/smoke-portable.cjs
+      - name: Preserve verification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: verification-${{ matrix.name }}
+          path: |
+            docs/1.2.0/
+            test-results/
+          retention-days: 30
+          if-no-files-found: warn
+      - name: Upload verified packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: packages-${{ matrix.name }}
+          path: |
+            release/1.2.0/*.dmg
+            release/1.2.0/*.zip
+            release/1.2.0/*.exe
+          retention-days: 30
+          if-no-files-found: error
+
+  publish:
+    name: Publish verified downloads
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v') || inputs.publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: packages-*
+          path: release/1.2.0
+          merge-multiple: true
+      - name: Create checksums
+        run: node tools/release-files.cjs
+      - name: Publish prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          VERSION="$(node -p "require('./package.json').version")"
+          TAG="v${VERSION}"
+          if [[ "$GITHUB_REF" == refs/tags/* && "$GITHUB_REF_NAME" != "$TAG" ]]; then
+            echo "Tag and package version differ" >&2
+            exit 1
+          fi
+          gh release create "$TAG" release/1.2.0/*.dmg release/1.2.0/*.zip release/1.2.0/*.exe release/1.2.0/SHA256SUMS.txt \
+            --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+            --title "SnapJoy ${VERSION} · macOS 预览版与 Windows 版" \
+            --notes-file docs/releases/1.2.0.md --prerelease

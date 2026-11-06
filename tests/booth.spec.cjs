@@ -30,6 +30,7 @@ test('camera, every effect, true PNG capture, mirror, local persistence and priv
   const errors = []; page.on('pageerror', (e) => errors.push(e.message));
   try {
     await expect(page).toHaveTitle('拾光相机 · SnapJoy');
+    expect(await page.evaluate(() => window.booth.platform)).toBe(process.platform);
     await expect(page.locator('.titlebar-label')).toHaveText('SNAPJOY');
     await expect(page.locator('#welcome')).toBeVisible();
     expect(await page.locator('#cameraVideo').evaluate((v) => v.srcObject)).toBe(null);
@@ -153,6 +154,7 @@ test('permission denial explains recovery and camera startup can be retried', as
     await page.locator('#startCamera').click();
     await expect(page.locator('#welcomeTitle')).toHaveText('需要开启摄像头权限');
     await expect(page.locator('#cameraSettings')).toBeVisible();
+    await expect(page.locator('#cameraSettings')).toHaveText(process.platform === 'darwin' ? '打开 Mac 摄像头设置' : '打开 Windows 摄像头设置');
     await expect(page.locator('#shutter')).toBeDisabled();
     await activate(page);
     await page.locator('#powerButton').click();

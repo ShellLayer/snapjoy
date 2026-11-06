@@ -128,7 +128,7 @@
     <div class="photo-topbar"><span id="photoInfo"></span><button class="icon-button" data-close="photoDialog" aria-label="关闭照片"><span data-icon="x"></span></button></div>
     <div class="photo-stage"><button id="previousPhoto" class="photo-arrow" aria-label="上一张"><span data-icon="chevron-left"></span></button><img id="fullPhoto" alt="拍摄的照片"><button id="nextPhoto" class="photo-arrow" aria-label="下一张"><span data-icon="chevron-right"></span></button></div>
     <div class="photo-actions"><button id="deletePhoto" class="text-button danger"><span data-icon="trash"></span>删除</button><div><button id="showPhoto" class="soft-button"><span data-icon="folder"></span>在文件夹中查看</button><button id="exportPhoto" class="primary-button"><span data-icon="download"></span>另存为</button></div></div>
-    <div id="deleteConfirmation" class="delete-confirmation" hidden><p>将这张照片移到回收站？</p><small>需要时可以从 Windows 回收站恢复原图。</small><div><button id="cancelDelete" class="soft-button">保留</button><button id="confirmDelete" class="primary-button">移到回收站</button></div></div>
+    <div id="deleteConfirmation" class="delete-confirmation" hidden><p>将这张照片移到回收站？</p><small id="deleteRecoveryHint">需要时可以从 Windows 回收站恢复原图。</small><div><button id="cancelDelete" class="soft-button">保留</button><button id="confirmDelete" class="primary-button">移到回收站</button></div></div>
   </dialog>
   <dialog id="helpDialog" class="help-dialog">
     <div class="dialog-heading"><div><span class="eyebrow">A SMALL GUIDE</span><h2>你好，欢迎来到拾光。</h2></div><button class="icon-button" data-close="helpDialog" aria-label="关闭帮助"><span data-icon="x"></span></button></div>

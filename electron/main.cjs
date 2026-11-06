@@ -1,10 +1,11 @@
-const { app, BrowserWindow, ipcMain, protocol, session, net, shell, dialog, nativeImage, Menu } = require('electron');
+const { app, BrowserWindow, ipcMain, protocol, session, net, shell, dialog, nativeImage, Menu, systemPreferences } = require('electron');
 const fs = require('node:fs/promises');
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
 const { randomUUID } = require('node:crypto');
 
 const APP_URL = 'lumi://app/';
+const isMac = process.platform === 'darwin';
 const isTest = !app.isPackaged && process.env.LUMI_TEST === '1';
 if (isTest && process.env.LUMI_TEST_DATA) app.setPath('userData', path.resolve(process.env.LUMI_TEST_DATA));
 app.setName('拾光相机');
@@ -102,7 +103,7 @@ function setupHandlers() {
     const items = await readLibrary();
     if (!items.some((p) => p.id === id)) throw new Error('照片不存在。');
     try { await fs.access(photoPath(id)); await shell.trashItem(photoPath(id)); }
-    catch (error) { if (error.code !== 'ENOENT') throw new Error('无法移到回收站，照片仍保留在相册中。'); }
+    catch (error) { if (error.code !== 'ENOENT') throw new Error('无法移到' + (isMac ? '废纸篓' : '回收站') + '，照片仍保留在相册中。'); }
     await writeLibrary(items.filter((p) => p.id !== id));
     await fs.rm(thumbPath(id), { force: true }).catch(() => {});
     return true;
@@ -124,7 +125,17 @@ function setupHandlers() {
     const error = await shell.openPath(photoDir);
     if (error) throw new Error(error);
   });
-  handle('camera:settings', () => shell.openExternal('ms-settings:privacy-webcam'));
+  handle('camera:authorize', async () => {
+    // A fake Chromium camera needs no system device or macOS privacy prompt.
+    if (!isMac || app.commandLine.hasSwitch('use-fake-device-for-media-stream')) return true;
+    const status = systemPreferences.getMediaAccessStatus('camera');
+    if (status === 'granted') return true;
+    if (status === 'denied' || status === 'restricted') return false;
+    return systemPreferences.askForMediaAccess('camera');
+  });
+  handle('camera:settings', () => shell.openExternal(isMac
+    ? 'x-apple.systempreferences:com.apple.preference.security?Privacy_Camera'
+    : 'ms-settings:privacy-webcam'));
   handle('window:action', (action) => {
     if (action === 'minimize') mainWindow.minimize();
     if (action === 'maximize') mainWindow.isMaximized() ? mainWindow.unmaximize() : mainWindow.maximize();
@@ -155,7 +166,8 @@ function setupProtocol() {
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1320, height: 940, minWidth: 980, minHeight: 720,
-    show: false, backgroundColor: '#f6f3ed', frame: false,
+    show: false, backgroundColor: '#f6f3ed', frame: isMac,
+    ...(isMac ? { titleBarStyle: 'hidden', trafficLightPosition: { x: 16, y: 8 } } : {}),
     title: '拾光相机 · SnapJoy',
     icon: path.join(__dirname, '../assets/icon.png'),
     webPreferences: {
@@ -176,6 +188,7 @@ function createWindow() {
     if (choice === 1) event.preventDefault();
   });
   mainWindow.once('ready-to-show', () => { if (!isTest) mainWindow.show(); });
+  mainWindow.on('closed', () => { mainWindow = null; });
   mainWindow.loadURL(APP_URL);
 }
 
@@ -187,7 +200,9 @@ else {
   app.whenReady().then(() => {
     photoDir = isTest ? path.join(app.getPath('userData'), 'photos') : path.join(app.getPath('pictures'), '拾光相机');
     libraryFile = path.join(photoDir, '.library.json');
-    Menu.setApplicationMenu(null);
+    Menu.setApplicationMenu(isMac ? Menu.buildFromTemplate([
+      { role: 'appMenu' }, { role: 'editMenu' }, { role: 'windowMenu' }
+    ]) : null);
     session.defaultSession.setPermissionRequestHandler((contents, permission, callback, details) => {
       callback(contents === mainWindow?.webContents && trusted(details.requestingUrl) &&
         permission === 'media' && details.mediaTypes?.length > 0 && details.mediaTypes.every((type) => type === 'video'));
@@ -203,5 +218,8 @@ else {
     dialog.showErrorBox('拾光相机无法启动', error.message);
     app.quit();
   });
-  app.on('window-all-closed', () => app.quit());
+  app.on('activate', () => {
+    if (app.isReady() && BrowserWindow.getAllWindows().length === 0) createWindow();
+  });
+  app.on('window-all-closed', () => { if (!isMac) app.quit(); });
 }

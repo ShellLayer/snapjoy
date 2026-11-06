@@ -4,3 +4,4 @@
 *.ico -text
 *.wasm -text
 *.tflite -text
+*.icns -text
