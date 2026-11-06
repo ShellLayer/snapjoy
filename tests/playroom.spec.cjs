@@ -12,6 +12,14 @@ async function launch(dataDir){
 }
 async function temp(){return fs.mkdtemp(path.join(os.tmpdir(),'lumi-playroom-'));}
 async function activate(page){await page.locator('#startCamera').click();await expect(page.locator('#cameraStatus')).toHaveText('正在取景');}
+async function interactionCamera(page){
+  // Editing and byte-for-byte composition do not require an HD stream. The main
+  // camera and packaged-app tests continue to exercise the full HD resolution.
+  await page.evaluate(()=>{
+    const getMedia=navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
+    navigator.mediaDevices.getUserMedia=options=>getMedia({...options,video:{...options.video,width:{exact:640},height:{exact:480},frameRate:{ideal:10,max:10}}});
+  });
+}
 
 test('all 96 stickers and 12 frames render distinctly, catalog search and categories work',async()=>{
   const {app,page}=await launch(await temp());
@@ -51,6 +59,7 @@ test('all 96 stickers and 12 frames render distinctly, catalog search and catego
 test('stickers drag, resize, rotate, undo and compose into exact PNG; scene persists',async()=>{
   const dataDir=await temp();let {app,page}=await launch(dataDir);
   try{
+    await interactionCamera(page);
     await activate(page);
     await page.locator('#timerSelect').selectOption('0');
     await page.locator('[data-panel="stickers"]').click();
@@ -103,6 +112,33 @@ test('stickers drag, resize, rotate, undo and compose into exact PNG; scene pers
     await page.locator('#resetLook').click();
     await expect(page.locator('#placedCount')).toHaveText('0');
   }finally{await app.close();}
+});
+
+test('face tracking can recover after a model error by restarting the camera',async()=>{
+  const {app,page}=await launch(await temp());
+  try {
+    await interactionCamera(page);
+    await page.evaluate(()=>{
+      const NativeWorker=window.Worker;
+      let first=true;
+      window.Worker=class extends NativeWorker {
+        constructor(url,options){
+          super(url,options);
+          if(first){first=false;setTimeout(()=>this.dispatchEvent(new MessageEvent('message',{data:{type:'error',message:'模拟本地模型初始化失败'}})),0);}
+        }
+      };
+    });
+    await activate(page);
+    await page.locator('[data-panel="stickers"]').click();
+    await page.getByRole('button',{name:'添加兔耳朵',exact:true}).click();
+    await expect(page.locator('#faceStatus')).toContainText('跟随暂不可用');
+    await expect(page.locator('#faceStatus')).toHaveAttribute('title','模拟本地模型初始化失败');
+    await expect(page.locator('#shutter')).toBeEnabled();
+    await page.locator('#powerButton').click();
+    await activate(page);
+    await expect(page.locator('#faceStatus')).toHaveText(/正在寻找人脸|正在跟随主要人脸/,{timeout:65000});
+    await expect(page.locator('#faceStatus')).toHaveAttribute('title','');
+  } finally { await app.close(); }
 });
 
 test('offline face worker loads bundled model, locates a face and mirrors landmarks',async()=>{
