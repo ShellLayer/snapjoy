@@ -16,7 +16,7 @@ const executablePath = isMac
   const app = await electron.launch({
     executablePath,
     args: ['--user-data-dir='+userData,'--use-fake-device-for-media-stream',...graphicsArgs],
-    env, timeout:30000
+    env, timeout:process.env.CI ? 90000 : 30000
   });
   try {
     const page = await app.firstWindow();

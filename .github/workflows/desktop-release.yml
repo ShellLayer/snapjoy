@@ -52,11 +52,13 @@ jobs:
         run: npm test
       - name: Build native packages
         run: ${{ matrix.command }}
-      - name: Check packaged app
-        run: npm run smoke:package
       - name: Verify macOS bundle metadata and signature
         if: runner.os == 'macOS'
         run: node tools/verify-mac-bundle.cjs
+      - name: Check packaged app
+        env:
+          DEBUG: pw:browser
+        run: npm run smoke:package
       - name: Check Windows portable app
         if: runner.os == 'Windows'
         run: node tools/smoke-portable.cjs
