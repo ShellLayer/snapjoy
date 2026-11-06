@@ -73,7 +73,7 @@ jobs:
         run: npm test
       - name: Run camera and recording regression tests
         if: inputs.checks == 'studio'
-        run: npm test -- tests/studio.spec.cjs
+        run: npm test -- tests/studio.spec.cjs --max-failures=0
       - name: Build native packages
         run: ${{ matrix.command }}
       - name: Verify macOS bundle metadata and signature

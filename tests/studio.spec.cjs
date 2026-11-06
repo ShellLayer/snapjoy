@@ -129,7 +129,11 @@ test('silent video records the composed frame, pauses, plays, seeks, exports and
     expect(ranges.suffix.status).toBe(206);expect(ranges.suffix.bytes).toEqual(Array.from(content.subarray(-16)));expect(ranges.invalid.status).toBe(416);
     await page.locator('.recent-photo').click();await expect(page.locator('#fullVideo')).toBeVisible();
     const playback=await page.locator('#fullVideo').evaluate(async video=>{
-      await video.play();await new Promise(resolve=>setTimeout(resolve,350));
+      await video.play();await new Promise((resolve,reject)=>{
+        const timeout=setTimeout(()=>reject(new Error('Video did not present a decoded frame')),20000);
+        const frame=()=>{if(video.currentTime>.15){clearTimeout(timeout);resolve();}else video.requestVideoFrameCallback(frame);};
+        video.requestVideoFrameCallback(frame);
+      });
       const c=document.createElement('canvas');c.width=video.videoWidth;c.height=video.videoHeight;const x=c.getContext('2d');x.drawImage(video,0,0);
       const corner=Array.from(x.getImageData(2,2,1,1).data),stream=video.captureStream();
       const ranges=value=>Array.from({length:value.length},(_,i)=>[value.start(i),value.end(i)]);
@@ -157,7 +161,14 @@ test('audio is opt-in and released after recording; camera interruption saves th
     expect(await page.evaluate(()=>window.testAudioTracks.every(t=>t.readyState==='ended'))).toBe(true);
     const video=(await page.evaluate(()=>window.booth.listPhotos())).photos[0];expect(video.audio).toBe(true);
     await page.locator('.recent-photo').click();
-    const tracks=await page.locator('#fullVideo').evaluate(async v=>{await v.play();await new Promise(r=>setTimeout(r,200));const stream=v.captureStream();const count=stream.getAudioTracks().length;stream.getTracks().forEach(t=>t.stop());v.pause();return count;});expect(tracks).toBe(1);
+    const tracks=await page.locator('#fullVideo').evaluate(async v=>{
+      await v.play();const stream=v.captureStream();
+      if(!stream.getAudioTracks().length)await new Promise((resolve,reject)=>{
+        const timer=setTimeout(()=>reject(new Error('Recorded audio track did not become available')),20000);
+        stream.addEventListener('addtrack',()=>{if(stream.getAudioTracks().length){clearTimeout(timer);resolve();}});
+      });
+      const count=stream.getAudioTracks().length;stream.getTracks().forEach(t=>t.stop());v.pause();return count;
+    });expect(tracks).toBe(1);
   }finally{await close(app);}
 });
 
