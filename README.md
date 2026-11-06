@@ -94,7 +94,7 @@ npm test
 
 Windows 使用 `npm run dist`；Mac 使用 `npm run dist:mac -- --arm64`（Apple 芯片）或 `npm run dist:mac -- --x64`（Intel）。打包输出在 `release/1.2.0`。日常修改后可使用 `git add`、`git commit` 和 `git push` 同步到仓库。
 
-GitHub 的 `Build desktop packages` 工作流使用三个原生环境运行完整测试、构建并启动发布程序。全部通过后才上传下载包。手动触发时可关闭 `publish`，只构建和验证；正式触发时的发布内容为预览版，Apple 开发者证书与公证尚未接入。后续接入证书时，应更新 Mac 签名配置并启用 hardened runtime 与公证，凭证通过 GitHub Secrets 提供。
+GitHub 的 `Build desktop packages` 工作流在 Apple 芯片 Mac 原生环境、Mac Rosetta 的 Intel 运行环境及 Windows 上运行完整测试、构建并启动发布程序。全部通过后才上传下载包。Intel 包为 x86_64 程序，本轮图形验证通过 Rosetta 完成，真实 Intel Mac 硬件仍待实拍验证。手动触发时可关闭 `publish`，只构建和验证；正式触发时的发布内容为预览版，Apple 开发者证书与公证尚未接入。后续接入证书时，应更新 Mac 签名配置并启用 hardened runtime 与公证，凭证通过 GitHub Secrets 提供。
 
 兼容性约定：`studio.lumi.booth` 应用标识、`lumi://app/` 本地协议、`lumi:` 存储键和中文应用名继续保留，用于沿用已有照片与设置；对外英文名称统一为 SnapJoy。
 

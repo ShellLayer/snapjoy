@@ -27,8 +27,10 @@ jobs:
             runner: macos-15
             arch: arm64
             command: npm run dist:mac -- --arm64
-          - name: macOS-Intel
-            runner: macos-15-intel
+          # Intel-hosted VMs expose no WebGL. Test x64 on the preinstalled Rosetta
+          # runtime so both architectures exercise the full graphics pipeline.
+          - name: macOS-Intel-Rosetta
+            runner: macos-15
             arch: x64
             command: npm run dist:mac -- --x64
           - name: Windows-x64
@@ -40,6 +42,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+          architecture: ${{ matrix.arch }}
           cache: npm
       - name: Install locked dependencies
         run: npm ci
