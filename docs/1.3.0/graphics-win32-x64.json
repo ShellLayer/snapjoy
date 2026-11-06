@@ -1,0 +1,11 @@
+{
+  "args": [
+    "--use-angle=swiftshader",
+    "--enable-unsafe-swiftshader"
+  ],
+  "appArch": "x64",
+  "testHostArch": "x64",
+  "webgl": true,
+  "webgl2": true,
+  "renderer": "WebKit WebGL"
+}
