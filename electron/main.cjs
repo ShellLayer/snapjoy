@@ -18,6 +18,7 @@ let mainWindow;
 let photoDir;
 let libraryFile;
 let microphoneAllowed = false;
+let clearVideoSessions = () => {};
 let queue = Promise.resolve();
 const sourceDir = path.resolve(__dirname, '../src');
 const idPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
@@ -62,7 +63,7 @@ function handle(channel, fn) {
   });
 }
 function setupHandlers() {
-  require('./video-store.cjs')({handle,serial,directory:photoDir,readLibrary,writeLibrary,publicPhoto,nativeImage});
+  clearVideoSessions = require('./video-store.cjs')({handle,serial,directory:photoDir,readLibrary,writeLibrary,publicPhoto,nativeImage});
   handle('photos:list', () => serial(async () => {
     const items = await readLibrary();
     const existing = await Promise.all(items.map(async (p) => {
@@ -209,7 +210,7 @@ function createWindow() {
     if (choice === 1) event.preventDefault();
   });
   mainWindow.once('ready-to-show', () => { if (!isTest) mainWindow.show(); });
-  mainWindow.on('closed', () => { microphoneAllowed = false; mainWindow = null; });
+  mainWindow.on('closed', () => { microphoneAllowed = false; clearVideoSessions(); mainWindow = null; });
   mainWindow.loadURL(APP_URL);
 }
 

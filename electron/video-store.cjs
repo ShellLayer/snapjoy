@@ -52,4 +52,7 @@ module.exports=function setupVideos({handle,serial,directory,readLibrary,writeLi
     if(!s.moved)await fs.rm(s.temp,{force:true});
     await fs.rm(path.join(folder,id+'.json'),{force:true});return true;
   }));
+  // A Mac window can be closed while the app remains alive. Keep interrupted
+  // files on disk, but never let an abandoned session block a new window.
+  return () => sessions.clear();
 };

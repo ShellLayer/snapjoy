@@ -42,6 +42,7 @@ test('macOS has native menus, camera privacy routing and Dock window recreation'
     await app.evaluate(({systemPreferences})=>{systemPreferences.getMediaAccessStatus=()=> 'not-determined';});
     expect(await page.evaluate(()=>window.booth.requestMicrophoneAccess())).toBe(false);
     expect((await app.evaluate(()=>globalThis.macTest.requests)).at(-1)).toBe('microphone');
+    await page.evaluate(()=>window.booth.beginVideo({extension:'webm',width:640,height:360}));
     await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].close());
     await expect.poll(() => app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().length)).toBe(0);
     const nextWindow = app.waitForEvent('window');
@@ -49,5 +50,7 @@ test('macOS has native menus, camera privacy routing and Dock window recreation'
     const restored = await nextWindow;
     await expect(restored).toHaveTitle('拾光相机 · SnapJoy');
     expect(await restored.locator('#cameraVideo').evaluate(video => video.srcObject)).toBe(null);
+    const newSession=await restored.evaluate(()=>window.booth.beginVideo({extension:'webm',width:640,height:360}));
+    expect(typeof newSession).toBe('string');await restored.evaluate(id=>window.booth.abortVideo(id),newSession);
   } finally { await app.close(); }
 });
