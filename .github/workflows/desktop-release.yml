@@ -7,6 +7,13 @@ on:
         description: Publish verified packages to a GitHub prerelease
         type: boolean
         default: true
+      macos_image:
+        description: Standard Mac image (alternate pool when the default is queued)
+        type: choice
+        default: macos-15
+        options:
+          - macos-15
+          - macos-26
   push:
     tags:
       - 'v*'
@@ -17,7 +24,7 @@ permissions:
 jobs:
   build:
     name: Build ${{ matrix.name }}
-    runs-on: ${{ matrix.runner }}
+    runs-on: ${{ (matrix.runner == 'macos-15' && inputs.macos_image) || matrix.runner }}
     timeout-minutes: 35
     env:
       SNAPJOY_PACKAGE_ARCH: ${{ matrix.arch }}
