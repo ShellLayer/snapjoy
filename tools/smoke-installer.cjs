@@ -21,7 +21,7 @@ const root=path.resolve(__dirname,'..');
   const page=await app.firstWindow();await page.waitForSelector('.effect-card');
   const result=await page.evaluate(()=>({title:document.title,effects:document.querySelectorAll('.effect-card').length,cameraOff:!document.querySelector('#cameraVideo').srcObject,videoMode:!!document.querySelector('[data-mode="video"]')}));
   const version=await app.evaluate(({app})=>app.getVersion());
-  if(version!==config.version||result.effects!==60||!result.cameraOff||!result.videoMode)throw new Error('Installed app is incomplete');
+  if(version!==config.version||result.effects!==84||!result.cameraOff||!result.videoMode)throw new Error('Installed app is incomplete');
   const output={passed:true,version,installer:true,...result,checkedAt:new Date().toISOString()};
   const folder=path.join(root,'docs',config.version);await fs.mkdir(folder,{recursive:true});await fs.writeFile(path.join(folder,'installer-verification.json'),JSON.stringify(output,null,2));console.log(JSON.stringify(output));
  }finally{await app.close();}

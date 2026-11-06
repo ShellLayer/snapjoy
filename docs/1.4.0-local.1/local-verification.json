@@ -1,0 +1,14 @@
+{
+  "version": "1.4.0-local.1",
+  "passed": true,
+  "scope": "local Windows x64; no GitHub sync or release",
+  "functionalCasesPassed": 20,
+  "platformSpecificCasesSkipped": 1,
+  "fullRun": "functional-test-results.json",
+  "isolatedRecheck": "anchor-recheck-results.json",
+  "recheckReason": "The existing look-selector check still expected 25 options (24 looks). Updated to 41 options (40 looks) and the entire affected case passed. Application code was unchanged between these runs.",
+  "packageVerification": "package-verification-win32-x64.json",
+  "media": "simulated camera and microphone, existing public fixture, temporary test photo libraries",
+  "executable": "release/1.4.0-local.1/win-unpacked/拾光相机.exe",
+  "checkedAt": "2026-11-06T17:46:03.397314+00:00"
+}

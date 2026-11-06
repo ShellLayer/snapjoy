@@ -631,16 +631,16 @@ function updateCatalogEmpty() {
 function buildStickers() {
   const query=$('catalogSearch').value.trim().toLowerCase();
   $('stickerGrid').replaceChildren();
-  for(const def of STICKERS.filter(s=>(stickerCategory==='all'||s.category===stickerCategory)&&(s.name+' '+s.id).toLowerCase().includes(query))){
+  for(const def of STICKERS.filter(s=>(stickerCategory==='all'||s.category===stickerCategory)&&(s.name+' '+s.id+' '+(s.keywords||'')).toLowerCase().includes(query))){
     const button=document.createElement('button');button.className='sticker-card';button.dataset.sticker=def.id;
-    button.title=def.name+(def.anchor?' · 默认跟随人脸':' · 可拖动摆放');button.setAttribute('aria-label','添加'+def.name);
+    button.title=def.name+(def.mask?' · 眼部镂空，自动贴脸；换款会替换原面具':def.anchor?' · 默认跟随人脸':' · 可拖动摆放');button.setAttribute('aria-label','添加'+def.name);
     const canvas=document.createElement('canvas');canvas.width=150;canvas.height=120;
     const asset=stickerImage(def),c=canvas.getContext('2d');
     const size=Math.min(125,104*def.aspect),height=size/def.aspect;c.drawImage(asset,(150-size)/2,(120-height)/2,size,height);
     const label=document.createElement('span');label.textContent=def.name;
     const count=document.createElement('b');count.className='sticker-count';
     button.append(canvas,label,count);
-    if(def.anchor){const badge=document.createElement('i');badge.textContent='跟随';button.append(badge);}
+    if(def.anchor){const badge=document.createElement('i');badge.textContent=def.mask?'面具':'跟随';button.append(badge);}
     button.addEventListener('click',()=>{if(captureTask||recorder.busy)return;if(!scene.add(def.id))toast('最多同时叠加 20 张贴纸，先移除一张再试。');});
     $('stickerGrid').append(button);
   }
@@ -662,7 +662,8 @@ function buildFrames() {
 }
 function switchPanel(next) {
   panel=next;$('catalogSearch').value='';
-  $('catalogSearch').placeholder=next==='effects'?'搜索特效，例如：大头':next==='stickers'?'搜索贴纸，例如：兔、眼镜':'搜索相框，例如：生日';
+  $('maskHint').hidden=next!=='stickers'||stickerCategory!=='masks';
+  $('catalogSearch').placeholder=next==='effects'?'搜索特效，例如：雪花、泡泡':next==='stickers'?'搜索贴纸或面具，例如：狐狸、机器人':'搜索相框，例如：生日';
   document.querySelectorAll('[data-panel]').forEach(b=>{b.classList.toggle('active',b.dataset.panel===next);b.setAttribute('aria-pressed',String(b.dataset.panel===next));});
   for(const [id,show] of [['effectTabs',next==='effects'],['stickerTabs',next==='stickers'],['effectGrid',next==='effects'],['stickerGrid',next==='stickers'],['frameGrid',next==='frames'],['effectSettings',next==='effects'],['stickerSettings',next==='stickers'],['frameSettings',next==='frames']])$(id).hidden=!show;
   document.querySelector('.effect-scroll').scrollTop=0;
@@ -676,7 +677,7 @@ for(const [id,name] of STICKER_CATEGORIES){
   button.classList.toggle('active',id==='all');button.setAttribute('aria-pressed',String(id==='all'));
   button.addEventListener('click',()=>{
     stickerCategory=id;document.querySelectorAll('[data-sticker-category]').forEach(b=>{b.classList.toggle('active',b===button);b.setAttribute('aria-pressed',String(b===button));});
-    buildStickers();
+    $('maskHint').hidden=id!=='masks';buildStickers();
   });$('stickerTabs').append(button);
 }
 $('stickerSize').addEventListener('input',()=>{if(!captureTask&&!recorder.busy&&scene.current)scene.update(scene.current.follow?{scale:Number($('stickerSize').value)/100}:{width:Number($('stickerSize').value)/100});});
@@ -720,7 +721,23 @@ const looks=[
   ['毕业啦',53,'chalk',['prop-hats-graduate','prop-eyewear-round']],
   ['潜水小队',23,'bubbles',['prop-eyewear-dive','prop-paint-tears']],
   ['派对DJ',7,'arcade',['prop-accessories-headphone','prop-eyewear-pixel']],
-  ['圣诞爷爷',48,'winter',['prop-hats-santa','prop-accessories-santabeard','prop-eyewear-round']]
+  ['圣诞爷爷',48,'winter',['prop-hats-santa','prop-accessories-santabeard','prop-eyewear-round']],
+  ['猫咪茶话会',61,'cherry',['mask-cat','prop-accessories-bowtie']],
+  ['赤狐森林',62,'botanical',['mask-fox']],
+  ['熊猫竹林',60,'jungle',['mask-panda']],
+  ['雪地小狼',66,'winter',['mask-husky','prop-accessories-scarf']],
+  ['月下猫头鹰',68,'stars',['mask-owl']],
+  ['龙岛探险',62,'jungle',['mask-dragon']],
+  ['珊瑚泡泡',67,'ocean',['mask-mermaid','prop-accessories-necklace']],
+  ['独角兽花园',69,'butterflies',['mask-unicorn']],
+  ['银河机器人',64,'neon',['mask-robot']],
+  ['月球小队',63,'space',['mask-astronaut']],
+  ['友好外星来客',59,'arcade',['mask-alien']],
+  ['闪电出发',73,'comic',['mask-hero']],
+  ['彩蝶舞会',54,'garden',['mask-butterfly']],
+  ['金羽庆典',65,'festival',['mask-phoenix']],
+  ['冰晶冒险',66,'winter',['mask-ice']],
+  ['彩铃马戏团',65,'birthday',['mask-carnival']]
 ];
 looks.forEach(([name],i)=>$('lookSelect').add(new Option(name,String(i))));
 function applyLook(index){

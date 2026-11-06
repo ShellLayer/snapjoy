@@ -8,10 +8,10 @@ test('macOS has native menus, camera privacy routing and Dock window recreation'
   const dataDir = await fs.mkdtemp(path.join(os.tmpdir(), 'snapjoy-mac-'));
   const env = { ...process.env, LUMI_TEST: '1', LUMI_TEST_DATA: dataDir };
   delete env.ELECTRON_RUN_AS_NODE;
-  const app = await electron.launch({ args: [path.resolve(__dirname, '..')], env });
+  const app = await electron.launch({ args: [path.resolve(__dirname, '..')], env, timeout: process.env.CI ? 90000 : 30000 });
   try {
     const page = await app.firstWindow();
-    await expect(page.locator('.effect-card')).toHaveCount(60);
+    await expect(page.locator('.effect-card')).toHaveCount(84,{timeout:process.env.CI?60000:15000});
     await expect(page.locator('html')).toHaveClass(/platform-mac/);
     await expect(page.locator('.window-actions')).toBeHidden();
     await expect(page.locator('#helpCameraSettings')).toContainText('Mac 隐私设置');

@@ -7,9 +7,9 @@ const root=path.resolve(__dirname,'..');
 async function launch(width=1280,height=720){
   const dir=await fs.mkdtemp(path.join(os.tmpdir(),'snapjoy-studio-'));
   const env={...process.env,LUMI_TEST:'1',LUMI_TEST_DATA:dir};delete env.ELECTRON_RUN_AS_NODE;
-  const app=await electron.launch({args:[root,'--use-fake-device-for-media-stream',...graphicsArgs],env});
+  const app=await electron.launch({args:[root,'--use-fake-device-for-media-stream',...graphicsArgs],env,timeout:process.env.CI?90000:30000});
   try{
-  const page=await app.firstWindow();await expect(page.locator('.effect-card')).toHaveCount(60,{timeout:process.env.CI?60000:15000});
+  const page=await app.firstWindow();await expect(page.locator('.effect-card')).toHaveCount(84,{timeout:process.env.CI?60000:15000});
   await page.evaluate(({width,height})=>{
     const start=MediaRecorder.prototype.start;
     MediaRecorder.prototype.start=function(...args){
@@ -101,7 +101,7 @@ test('face anchors and offsets persist, track movement at every ratio and legacy
       return {distances,legacy:scene.nodes.length,legacyName:stickerById('food-7').name,emojiInCatalog:STICKERS.some(s=>s.emoji)};
     });
     expect(result.distances.every(d=>Math.abs(d-.1)<.00001)).toBeTruthy();expect(result.legacy).toBe(1);expect(result.legacyName).toBe('棒棒糖');expect(result.emojiInCatalog).toBe(false);
-    expect(await page.locator('#lookSelect option').count()).toBe(25);
+    expect(await page.locator('#lookSelect option').count()).toBe(41);
     await page.locator('#lookSelect').selectOption('8');await expect(page.locator('#placedCount')).toHaveText('3');
   }finally{await close(app);}
 });
@@ -110,6 +110,13 @@ test('silent video records the composed frame, pauses, plays, seeks, exports and
   const {app,page,dir}=await launch();
   try{
     await activate(page);await page.locator('#sizeSelect').selectOption('640');
+    await page.getByRole('button',{name:'彩纸飘飘',exact:true}).click();
+    await page.locator('[data-panel="stickers"]').click();await page.getByRole('button',{name:'添加星际机器人面具',exact:true}).click();await page.locator('#followFace').uncheck();
+    const maskSample=await page.evaluate(async()=>{
+      const {stickerById,stickerImage,DecorationScene}=await import('./stickers.js');const scene=new DecorationScene();scene.restore(JSON.parse(localStorage.getItem('lumi:scene:v1')));
+      const node=scene.nodes.find(n=>n.stickerId==='mask-robot'),def=stickerById(node.stickerId),p=scene.placement(node),asset=stickerImage(def);
+      return {x:Math.round((p.x+(52/200-.5)*p.width)*640),y:Math.round(p.y*360+(151/240-.5)*p.width*640/def.aspect),color:Array.from(asset.getContext('2d').getImageData(Math.round(52/200*asset.width),Math.round(151/240*asset.height),1,1).data)};
+    });
     await page.locator('[data-panel="frames"]').click();await page.getByRole('button',{name:'彩虹乐园相框',exact:true}).click();
     await page.locator('[data-mode="video"].mode-button').click();await expect(page.locator('#recordAudio')).not.toBeChecked();
     await page.evaluate(()=>{
@@ -130,6 +137,7 @@ test('silent video records the composed frame, pauses, plays, seeks, exports and
     await recordedSeconds(page,3);
     await page.locator('#shutter').click();await expect(page.locator('.recent-photo')).toHaveCount(1,{timeout:30000});
     const item=(await page.evaluate(()=>window.booth.listPhotos())).photos[0];
+    expect(item.stickers).toEqual(['星际机器人面具']);expect(item.effect).toBe('彩纸飘飘');
     expect(item.kind).toBe('video');expect(item.audio).toBe(false);expect(item.frame).toBe('彩虹乐园');expect(item.duration).toBeGreaterThanOrEqual(3);const measured=await page.evaluate(()=>{const t=window.recordTimes;return (t.stopRequested-t.start-(t.resume-t.pause))/1000;});expect(Math.abs(item.duration-measured)).toBeLessThan(.2);
     const content=await fs.readFile(path.join(dir,'photos',item.id+'.'+item.extension));expect(content.length).toBeGreaterThan(4000);
     await fs.writeFile(path.join(root,'test-results','recorded-silent.'+item.extension),content);
@@ -140,7 +148,7 @@ test('silent video records the composed frame, pauses, plays, seeks, exports and
     expect(ranges.prefix).toEqual({status:206,range:'bytes 0-31/'+content.length,length:'32',bytes:Array.from(content.subarray(0,32))});
     expect(ranges.suffix.status).toBe(206);expect(ranges.suffix.bytes).toEqual(Array.from(content.subarray(-16)));expect(ranges.invalid.status).toBe(416);
     await page.locator('.recent-photo').click();await expect(page.locator('#fullVideo')).toBeVisible();
-    const playback=await page.locator('#fullVideo').evaluate(async video=>{
+    const playback=await page.locator('#fullVideo').evaluate(async(video,maskSample)=>{
       await video.play();await new Promise((resolve,reject)=>{
         const timeout=setTimeout(()=>reject(new Error('Video did not present a decoded frame')),20000);
         const frame=()=>{if(video.currentTime>.15){clearTimeout(timeout);resolve();}else video.requestVideoFrameCallback(frame);};
@@ -149,10 +157,11 @@ test('silent video records the composed frame, pauses, plays, seeks, exports and
       const c=document.createElement('canvas');c.width=video.videoWidth;c.height=video.videoHeight;const x=c.getContext('2d');x.drawImage(video,0,0);
       const corner=Array.from(x.getImageData(2,2,1,1).data),stream=video.captureStream();
       const ranges=value=>Array.from({length:value.length},(_,i)=>[value.start(i),value.end(i)]);
-      const result={width:video.videoWidth,height:video.videoHeight,time:video.currentTime,duration:video.duration,seekable:ranges(video.seekable),buffered:ranges(video.buffered),audio:stream.getAudioTracks().length,corner};stream.getTracks().forEach(t=>t.stop());video.pause();
+      const result={width:video.videoWidth,height:video.videoHeight,time:video.currentTime,duration:video.duration,seekable:ranges(video.seekable),buffered:ranges(video.buffered),audio:stream.getAudioTracks().length,corner,maskPixel:Array.from(x.getImageData(maskSample.x,maskSample.y,1,1).data)};stream.getTracks().forEach(t=>t.stop());video.pause();
       await new Promise((resolve,reject)=>{video.addEventListener('seeked',resolve,{once:true});video.addEventListener('error',()=>reject(new Error('seek failed')),{once:true});video.currentTime=1;});result.seek=video.currentTime;return result;
-    });
+    },maskSample);
     console.log('Recorded playback verification',JSON.stringify({format:item.extension,recordedDuration:item.duration,...playback}));
+    expect(Math.max(...maskSample.color.slice(0,3).map((v,i)=>Math.abs(v-playback.maskPixel[i])))).toBeLessThan(25);
     expect([playback.width,playback.height]).toEqual([640,360]);expect(playback.time).toBeGreaterThan(0);expect(playback.seek).toBeCloseTo(1);expect(playback.audio).toBe(0);expect(playback.corner[0]).toBeGreaterThan(playback.corner[1]+40);
     const exportPath=path.join(dir,'export.'+item.extension);await app.evaluate(({dialog},filePath)=>{dialog.showSaveDialog=async()=>({canceled:false,filePath});},exportPath);
     await page.locator('#exportPhoto').click();await expect(page.locator('#toastText')).toHaveText('作品已另存。');expect((await fs.readFile(exportPath)).equals(content)).toBe(true);

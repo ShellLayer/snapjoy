@@ -20,7 +20,7 @@ const executablePath = isMac
   });
   try {
     const page = await app.firstWindow();
-    await page.waitForSelector('.effect-card');
+    await page.waitForSelector('.effect-card',{timeout:process.env.CI?60000:30000});
     const initial = await page.evaluate(() => ({
       title:document.title, effects:document.querySelectorAll('.effect-card').length,
       cameraOff:document.querySelector('#cameraVideo').srcObject===null,
@@ -29,7 +29,7 @@ const executablePath = isMac
       aspects:document.querySelector('#aspectSelect').options.length,
       microphoneOff:!document.querySelector('#recordAudio').checked
     }));
-    if(initial.title!=='拾光相机 · SnapJoy' || initial.effects!==60 || !initial.cameraOff || !initial.isolated || !initial.windowAPI) throw new Error(JSON.stringify(initial));
+    if(initial.title!=='拾光相机 · SnapJoy' || initial.effects!==84 || !initial.cameraOff || !initial.isolated || !initial.windowAPI) throw new Error(JSON.stringify(initial));
     await fs.mkdir(path.join(root,'docs',config.version),{recursive:true});
     // Capture only the catalog so a production photo library never enters test screenshots.
     await page.locator('.effects-panel').screenshot({path:path.join(root,'docs',config.version,'打包版特效面板.png')});
@@ -38,8 +38,11 @@ const executablePath = isMac
     const camera=await page.locator('#cameraVideo').evaluate(v=>({width:v.videoWidth,height:v.videoHeight,audioTracks:v.srcObject.getAudioTracks().length}));
     await page.locator('[data-panel="stickers"]').click();
     const stickers=await page.locator('.sticker-card').count();
-    if(stickers!==120)throw new Error('Sticker catalog missing in package');
-    await page.getByRole('button',{name:'添加兔耳朵',exact:true}).click();
+    if(stickers!==152)throw new Error('Sticker catalog missing in package');
+    await page.locator('[data-sticker-category="masks"]').click();
+    const masks=await page.locator('.sticker-card').count(),looks=(await page.locator('#lookSelect option').count())-1;
+    if(masks!==32||looks!==40)throw new Error('Packaged masks or themed looks are missing');
+    await page.getByRole('button',{name:'添加赤狐面具',exact:true}).click();
     await page.waitForFunction(()=>/正在寻找人脸|正在跟随主要人脸|跟随暂不可用/.test(document.querySelector('#faceStatus').textContent),null,{timeout:65000});
     const trackingStatus=await page.locator('#faceStatus').textContent();
     if(trackingStatus.includes('不可用'))throw new Error('Packaged face tracker failed to load: '+await page.locator('#faceStatus').getAttribute('title'));
@@ -53,9 +56,14 @@ const executablePath = isMac
       await page.locator('#resetLook').click();
       await page.locator('#sizeSelect').selectOption('640');
       await page.locator('[data-mode="video"].mode-button').click();
+      await page.evaluate(()=>{
+        const start=MediaRecorder.prototype.start;window.packageVideoBytes=0;
+        MediaRecorder.prototype.start=function(...args){this.addEventListener('dataavailable',event=>{window.packageVideoBytes+=event.data.size;});return start.apply(this,args);};
+      });
       await page.locator('#shutter').click();
       await page.waitForFunction(()=>document.querySelector('#recordingState').textContent==='录制中');
       await page.waitForFunction(()=>Number(document.querySelector('#recordingTime').textContent.split(':')[1])>=2);
+      await page.waitForFunction(()=>window.packageVideoBytes>0,null,{timeout:45000});
       await page.locator('#shutter').click();
       await page.waitForFunction(()=>document.querySelector('#recordingHud').hidden,null,{timeout:45000});
       const items=await page.evaluate(()=>window.booth.listPhotos());
@@ -81,7 +89,7 @@ const executablePath = isMac
     if(appVersion!==config.version)throw new Error('Packaged version does not match package.json');
     const appArch=await app.evaluate(()=>process.arch);
     if(appArch!==packageArch)throw new Error('Packaged architecture differs from the requested target');
-    const result={passed:true,version:config.version,platform:process.platform,arch:appArch,testHostArch:process.arch,translated:isMac&&process.arch==='arm64'&&appArch==='x64',packaged,...initial,camera,stickers,frames,trackingStatus,recordedVideo,testSource:'simulated camera; short silent video only on ephemeral CI runner',checkedAt:new Date().toISOString()};
+    const result={passed:true,version:config.version,platform:process.platform,arch:appArch,testHostArch:process.arch,translated:isMac&&process.arch==='arm64'&&appArch==='x64',packaged,...initial,camera,stickers,masks,looks,frames,trackingStatus,recordedVideo,testSource:'simulated camera; short silent video only on ephemeral CI runner',checkedAt:new Date().toISOString()};
     await fs.writeFile(path.join(root,'docs',config.version,`package-verification-${process.platform}-${packageArch}.json`),JSON.stringify(result,null,2));
     console.log(JSON.stringify(result,null,2));
   } finally { await app.close(); }

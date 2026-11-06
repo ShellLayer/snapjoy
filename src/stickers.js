@@ -1,4 +1,5 @@
 import { FACE_PROPS, drawFaceProp } from './face-props.js';
+import { MASKS, drawMask } from './masks.js';
 const wearable = [
   ['bunny','兔耳朵','head'],['cat','猫耳朵','head'],['puppy','垂耳小狗','head'],['bear','小熊耳朵','head'],
   ['antlers','小鹿角','head'],['dragon','小龙角','head'],['unicorn','独角兽头饰','head'],['crown','小皇冠','head'],
@@ -18,9 +19,9 @@ const emojiGroups = {
 const legacyStickers = [...Object.entries(emojiGroups).flatMap(([category, items]) =>
   items.map(([name,emoji],index)=>({id:category+'-'+index,name,emoji,category,aspect:1}))
 )];
-export const STICKERS = [...wearable, ...FACE_PROPS];
+export const STICKERS = [...wearable, ...FACE_PROPS, ...MASKS];
 export const ANCHORS = [['default','素材推荐'],['head','头顶'],['forehead','额头'],['eyes','双眼'],['leftEye','画面左眼'],['rightEye','画面右眼'],['nose','鼻子'],['mouth','嘴部'],['cheeks','双颊'],['leftCheek','画面左脸颊'],['rightCheek','画面右脸颊'],['chin','下巴'],['face','整张脸'],['neck','脖子']];
-export const STICKER_CATEGORIES = [['all','全部'],['wear','经典'],['animals','动物'],['hats','帽子'],['eyewear','眼镜'],['paint','面饰'],['magic','魔法'],['accessories','配饰']];
+export const STICKER_CATEGORIES = [['all','全部'],['masks','面具'],['wear','经典'],['animals','动物'],['hats','帽子'],['eyewear','眼镜'],['paint','面饰'],['magic','魔法'],['accessories','配饰']];
 export const FRAMES = [
   {id:'none',name:'不加相框',colors:['#eeeade']},
   {id:'instant',name:'拍立得',colors:['#fff9e8']},
@@ -165,7 +166,7 @@ export function stickerImage(def) {
   const c=canvas.getContext('2d');
   if(def.emoji){
     c.textAlign='center';c.textBaseline='middle';c.font='390px "Segoe UI Emoji", "Apple Color Emoji", sans-serif';c.fillText(def.emoji,240,258);
-  }else{c.scale(canvas.width/200,canvas.height/160);if(def.design)drawFaceProp(c,def);else drawWear(c,def.id);}
+  }else{c.scale(canvas.width/200,canvas.height/(def.mask?240:160));if(def.mask)drawMask(c,def);else if(def.design)drawFaceProp(c,def);else drawWear(c,def.id);}
   cache.set(def.id,canvas);return canvas;
 }
 export function drawSticker(c,def,x,y,width,rotation=0) {
@@ -259,7 +260,15 @@ export function facePlacement(def,face,anchor=def.anchor,aspect=4/3) {
   if(anchor==='leftCheek'||anchor==='rightCheek'){x=face.nose.x+(anchor==='leftCheek'?-1:1)*w*.34;y=face.nose.y+h*.09;width=w*.45;}
   if(anchor==='chin'){x=face.mouth.x;y=face.mouth.y+h*.33;width=w*.95;}
   if(anchor==='neck'){x=face.mouth.x;y=face.y+h*1.22;width=w*1.2;}
-  if(anchor==='face'){width=w*1.5;y=eyes.y+h*.25;}
+  if(anchor==='face'){
+    width=w*1.5;y=eyes.y+h*.25;
+    if(def.mask){
+      // Align the two cutouts to the detected eyes, including tilted faces and portrait crops.
+      width=face.eyeDistance/def.mask.eyeSpan;
+      const down=(.5-def.mask.eyeY)*width/def.aspect;
+      x=eyes.x-Math.sin(angle)*down;y=eyes.y+Math.cos(angle)*down*aspect;
+    }
+  }
   return {x,y,width:width*(def.anchorScale||1),rotation:angle};
 }
 
@@ -280,9 +289,11 @@ export class DecorationScene {
     this.frame=FRAMES.some(f=>f.id===data?.frame)?data.frame:'none';this.selected=null;
   }
   add(id) {
-    if(this.nodes.length>=20)return null;
     const def=byId.get(id);if(!def)return null;
+    const replacesMask=!!def.mask&&this.nodes.some(n=>byId.get(n.stickerId)?.mask);
+    if(this.nodes.length>=20&&!replacesMask)return null;
     this.remember();
+    if(replacesMask)this.nodes=this.nodes.filter(n=>!byId.get(n.stickerId)?.mask);
     const offset=(this.nodes.filter(n=>!n.follow).length%5)*.055;
     const node={uid:crypto.randomUUID(),stickerId:id,x:def.anchor ? .5 : .5+offset,y:def.anchor==='head' ? .23 : def.anchor==='eyes' ? .43 : .56-offset,width:def.anchor ? .35 : .23,rotation:0,follow:!!def.anchor,scale:1,anchor:'default',offsetX:0,offsetY:0};
     this.nodes.push(node);this.selected=node.uid;this.changed();return node;

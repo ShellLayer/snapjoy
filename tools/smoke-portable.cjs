@@ -11,7 +11,7 @@ const delay = (ms) => new Promise(resolve=>setTimeout(resolve,ms));
   const userData=await fs.mkdtemp(path.join(os.tmpdir(),'lumi-portable-'));
   const server=net.createServer(); await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
   const port=server.address().port;await new Promise(resolve=>server.close(resolve));
-  const child=spawn(path.join(root,config.build.directories.output,config.build.portable.artifactName),[
+  const child=spawn(path.join(root,config.build.directories.output,config.build.portable.artifactName.replace('${version}',config.version)),[
     '--remote-debugging-port='+port,'--user-data-dir='+userData,'--use-angle=swiftshader','--enable-unsafe-swiftshader'
   ],{windowsHide:true,stdio:'ignore'});
   let browser;
@@ -31,7 +31,7 @@ const delay = (ms) => new Promise(resolve=>setTimeout(resolve,ms));
       cameraOff:document.querySelector('#cameraVideo').srcObject===null,
       startEnabled:!document.querySelector('#startCamera').disabled
     }));
-    if(result.title!=='拾光相机 · SnapJoy'||result.effects!==60||!result.cameraOff||!result.startEnabled)throw new Error(JSON.stringify(result));
+    if(result.title!=='拾光相机 · SnapJoy'||result.effects!==84||!result.cameraOff||!result.startEnabled)throw new Error(JSON.stringify(result));
     await fs.mkdir(path.join(root,'docs',config.version),{recursive:true});
     await fs.writeFile(path.join(root,'docs',config.version,'portable-verification.json'),JSON.stringify({passed:true,version:config.version,...result,checkedAt:new Date().toISOString()},null,2));
     console.log(JSON.stringify({passed:true,portable:true,...result}));

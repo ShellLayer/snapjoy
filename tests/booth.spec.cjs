@@ -10,11 +10,11 @@ async function launch(dataDir, fake = true) {
   delete env.ELECTRON_RUN_AS_NODE;
   const app = await electron.launch({
     args: [root, ...graphicsArgs, ...(fake ? ['--use-fake-device-for-media-stream'] : [])],
-    env, timeout: 30000
+    env, timeout: process.env.CI ? 90000 : 30000
   });
   const page = await app.firstWindow();
   await page.waitForLoadState('domcontentloaded');
-  await expect(page.locator('.effect-card')).toHaveCount(60);
+  await expect(page.locator('.effect-card')).toHaveCount(84,{timeout:process.env.CI?60000:15000});
   return { app, page };
 }
 async function activate(page) {
@@ -59,7 +59,7 @@ test('camera, every effect, true PNG capture, mirror, local persistence and priv
       let difference=0; for(let y=0;y<180;y++)for(let x=0;x<240;x++)for(let ch=0;ch<3;ch++)difference+=Math.abs(original[(y*240+x)*4+ch]-mirrorPixels[(y*240+239-x)*4+ch]);
       return { hashes, mirrorError: difference/(240*180*3) };
     });
-    expect(new Set(effectResults.hashes.map((h) => h.hash)).size).toBe(60);
+    expect(new Set(effectResults.hashes.map((h) => h.hash)).size).toBe(84);
     expect(effectResults.hashes.every((h) => h.light > 240*180*255)).toBeTruthy();
     expect(effectResults.mirrorError).toBeLessThan(.2);
     await page.getByRole('button', { name: '黑白故事', exact:true }).click();

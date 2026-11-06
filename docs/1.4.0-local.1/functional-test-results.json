@@ -1,0 +1,915 @@
+{
+  "config": {
+    "argv": [
+      "C:\\Program Files\\nodejs\\node.exe",
+      "C:\\Users\\layer\\Desktop\\winphoto\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "--reporter=list,json"
+    ],
+    "configFile": "C:\\Users\\layer\\Desktop\\winphoto\\playwright.config.cjs",
+    "rootDir": "C:/Users/layer/Desktop/winphoto/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "C:/Users/layer/Desktop/winphoto/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "C:/Users/layer/Desktop/winphoto/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "filteredProjects": [
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "C:\\Users\\layer\\Desktop\\winphoto\\test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "name": "",
+        "testDir": "C:\\Users\\layer\\Desktop\\winphoto\\tests",
+        "snapshotDir": "C:\\Users\\layer\\Desktop\\winphoto\\tests",
+        "testIgnore": [],
+        "testMatch": "**/*.@(spec|test).?(c|m)[jt]s?(x)",
+        "timeout": 60000,
+        "use": {
+          "trace": "retain-on-failure"
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": ""
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "default",
+    "updateSourceMethod": "patch",
+    "version": "1.65.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "booth.spec.cjs",
+      "file": "booth.spec.cjs",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "camera, every effect, true PNG capture, mirror, local persistence and privacy",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 15939,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-06T17:39:00.152Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a556de4087ff503e73da-fd88c4616a030beafbaa",
+          "file": "booth.spec.cjs",
+          "line": 29,
+          "column": 1
+        },
+        {
+          "title": "four-shot strip, cancellation, double-click protection and safe deletion",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 30074,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-06T17:39:16.102Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a556de4087ff503e73da-1d428c0842f4e9c2c308",
+          "file": "booth.spec.cjs",
+          "line": 105,
+          "column": 1
+        },
+        {
+          "title": "permission denial explains recovery and camera startup can be retried",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 8131,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-06T17:39:46.181Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a556de4087ff503e73da-3950e33328560394660c",
+          "file": "booth.spec.cjs",
+          "line": 146,
+          "column": 1
+        },
+        {
+          "title": "storage failure preserves an unsaved photo for retry; invalid payloads rejected",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 8797,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-06T17:39:54.317Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a556de4087ff503e73da-af3ef4ec9714f8d2ab76",
+          "file": "booth.spec.cjs",
+          "line": 180,
+          "column": 1
+        },
+        {
+          "title": "GPU fallback still photographs; missing or disconnected camera cannot leave stale capture active",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 11277,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-06T17:40:03.118Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a556de4087ff503e73da-cd932fc72e17a0f6d441",
+          "file": "booth.spec.cjs",
+          "line": 215,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "macos.spec.cjs",
+      "file": "macos.spec.cjs",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "macOS has native menus, camera privacy routing and Dock window recreation",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [
+                {
+                  "type": "skip",
+                  "description": "Native macOS integration",
+                  "location": {
+                    "file": "C:\\Users\\layer\\Desktop\\winphoto\\tests\\macos.spec.cjs",
+                    "line": 7,
+                    "column": 8
+                  }
+                }
+              ],
+              "expectedStatus": "skipped",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "skipped",
+                  "duration": 0,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-06T17:40:14.404Z",
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "Native macOS integration",
+                      "location": {
+                        "file": "C:\\Users\\layer\\Desktop\\winphoto\\tests\\macos.spec.cjs",
+                        "line": 7,
+                        "column": 8
+                      }
+                    }
+                  ],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            }
+          ],
+          "id": "af6bba56ccb7662feb22-a73e4add6a91cefe60c8",
+          "file": "macos.spec.cjs",
+          "line": 6,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "masks.spec.cjs",
+      "file": "masks.spec.cjs",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "mask cutouts align to both eyes across crops and tilt; new effects animate and return to original at zero strength",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2104,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-06T17:40:14.411Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "924d1f88568f3e125192-5e0e74b68e1c8f4894f1",
+          "file": "masks.spec.cjs",
+          "line": 12,
+          "column": 1
+        },
+        {
+          "title": "mask picker replaces only the mask, supports undo, and saves an exact composed photo with persistent settings",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 19665,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-06T17:40:16.520Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "924d1f88568f3e125192-5b3a849976d4b8c3706b",
+          "file": "masks.spec.cjs",
+          "line": 49,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "playroom.spec.cjs",
+      "file": "playroom.spec.cjs",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "all 152 vector stickers and 24 frames render distinctly, catalog search and categories work",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 15654,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-06T17:40:36.192Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "2a4141fc10f593bf302c-7cb6eae3384cfce8bd5d",
+          "file": "playroom.spec.cjs",
+          "line": 24,
+          "column": 1
+        },
+        {
+          "title": "stickers drag, resize, rotate, undo and compose into exact PNG; scene persists",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 34356,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-06T17:40:51.852Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "2a4141fc10f593bf302c-5c71e5babb924bb0ae66",
+          "file": "playroom.spec.cjs",
+          "line": 59,
+          "column": 1
+        },
+        {
+          "title": "face tracking can recover after a model error by restarting the camera",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 12209,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-06T17:41:26.211Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "2a4141fc10f593bf302c-e7a64fe98eee776c44a8",
+          "file": "playroom.spec.cjs",
+          "line": 117,
+          "column": 1
+        },
+        {
+          "title": "offline face worker loads bundled model, locates a face and mirrors landmarks",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1240,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-06T17:41:38.424Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "2a4141fc10f593bf302c-526b99c8a464ae5fbceb",
+          "file": "playroom.spec.cjs",
+          "line": 144,
+          "column": 1
+        },
+        {
+          "title": "four-shot strips include decorations in every panel, random look and compact editor remain usable",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 33131,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-06T17:41:39.671Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "2a4141fc10f593bf302c-1f885b44ee37e00d8917",
+          "file": "playroom.spec.cjs",
+          "line": 180,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "studio.spec.cjs",
+      "file": "studio.spec.cjs",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "five aspect ratios save their actual dimensions without stretching; focus view expands preview",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 25305,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-06T17:42:12.813Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "8e083ab60749e97c3fb3-d427c4a637f748853196",
+          "file": "studio.spec.cjs",
+          "line": 38,
+          "column": 1
+        },
+        {
+          "title": "face anchors and offsets persist, track movement at every ratio and legacy scenes still load",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 2881,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m25\u001b[39m\nReceived: \u001b[31m41\u001b[39m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m25\u001b[39m\nReceived: \u001b[31m41\u001b[39m\n    at C:\\Users\\layer\\Desktop\\winphoto\\tests\\studio.spec.cjs:104:62",
+                    "location": {
+                      "file": "C:\\Users\\layer\\Desktop\\winphoto\\tests\\studio.spec.cjs",
+                      "column": 62,
+                      "line": 104
+                    },
+                    "snippet": " \u001b[90m 102 |\u001b[39m     })\u001b[33m;\u001b[39m\n \u001b[90m 103 |\u001b[39m     expect(result\u001b[33m.\u001b[39mdistances\u001b[33m.\u001b[39mevery(d\u001b[33m=>\u001b[39m\u001b[33mMath\u001b[39m\u001b[33m.\u001b[39mabs(d\u001b[33m-\u001b[39m\u001b[35m.1\u001b[39m)\u001b[33m<\u001b[39m\u001b[35m.00001\u001b[39m))\u001b[33m.\u001b[39mtoBeTruthy()\u001b[33m;\u001b[39mexpect(result\u001b[33m.\u001b[39mlegacy)\u001b[33m.\u001b[39mtoBe(\u001b[35m1\u001b[39m)\u001b[33m;\u001b[39mexpect(result\u001b[33m.\u001b[39mlegacyName)\u001b[33m.\u001b[39mtoBe(\u001b[32m'棒棒糖'\u001b[39m)\u001b[33m;\u001b[39mexpect(result\u001b[33m.\u001b[39memojiInCatalog)\u001b[33m.\u001b[39mtoBe(\u001b[36mfalse\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 104 |\u001b[39m     expect(\u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'#lookSelect option'\u001b[39m)\u001b[33m.\u001b[39mcount())\u001b[33m.\u001b[39mtoBe(\u001b[35m25\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                                                              \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 105 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'#lookSelect'\u001b[39m)\u001b[33m.\u001b[39mselectOption(\u001b[32m'8'\u001b[39m)\u001b[33m;\u001b[39m\u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mlocator(\u001b[32m'#placedCount'\u001b[39m))\u001b[33m.\u001b[39mtoHaveText(\u001b[32m'3'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 106 |\u001b[39m   }\u001b[36mfinally\u001b[39m{\u001b[36mawait\u001b[39m close(app)\u001b[33m;\u001b[39m}\n \u001b[90m 107 |\u001b[39m })\u001b[33m;\u001b[39m"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "C:\\Users\\layer\\Desktop\\winphoto\\tests\\studio.spec.cjs",
+                        "column": 62,
+                        "line": 104
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m25\u001b[39m\nReceived: \u001b[31m41\u001b[39m\n\n  102 |     });\n  103 |     expect(result.distances.every(d=>Math.abs(d-.1)<.00001)).toBeTruthy();expect(result.legacy).toBe(1);expect(result.legacyName).toBe('棒棒糖');expect(result.emojiInCatalog).toBe(false);\n> 104 |     expect(await page.locator('#lookSelect option').count()).toBe(25);\n      |                                                              ^\n  105 |     await page.locator('#lookSelect').selectOption('8');await expect(page.locator('#placedCount')).toHaveText('3');\n  106 |   }finally{await close(app);}\n  107 | });\n    at C:\\Users\\layer\\Desktop\\winphoto\\tests\\studio.spec.cjs:104:62"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-06T17:42:38.122Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "C:\\Users\\layer\\Desktop\\winphoto\\test-results\\studio-face-anchors-and-of-2cf14-nd-legacy-scenes-still-load\\error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "C:\\Users\\layer\\Desktop\\winphoto\\test-results\\studio-face-anchors-and-of-2cf14-nd-legacy-scenes-still-load\\trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "C:\\Users\\layer\\Desktop\\winphoto\\tests\\studio.spec.cjs",
+                    "column": 62,
+                    "line": 104
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "8e083ab60749e97c3fb3-bea394a5e7e59c8b79a7",
+          "file": "studio.spec.cjs",
+          "line": 79,
+          "column": 1
+        },
+        {
+          "title": "silent video records the composed frame, pauses, plays, seeks, exports and deletes",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 37780,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "Recorded playback verification {\"format\":\"mp4\",\"recordedDuration\":6.001,\"width\":640,\"height\":360,\"time\":1.9892,\"duration\":5.031767,\"seekable\":[[0,5.031767]],\"buffered\":[[0,5.031767]],\"audio\":0,\"corner\":[253,137,152,255],\"maskPixel\":[178,204,211,255],\"seek\":1}\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-06T17:42:41.202Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "8e083ab60749e97c3fb3-7a862c4a193b81b2eca4",
+          "file": "studio.spec.cjs",
+          "line": 109,
+          "column": 1
+        },
+        {
+          "title": "audio is opt-in and released after recording; camera interruption saves the video",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 11782,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-06T17:43:18.994Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "8e083ab60749e97c3fb3-afb6b02fe2dfe1faec84",
+          "file": "studio.spec.cjs",
+          "line": 172,
+          "column": 1
+        },
+        {
+          "title": "recording save failure is retryable and malformed or unsolicited writes are rejected",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 18779,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-06T17:43:30.781Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "8e083ab60749e97c3fb3-b6ce743987553c29a4aa",
+          "file": "studio.spec.cjs",
+          "line": 196,
+          "column": 1
+        },
+        {
+          "title": "full HD encoding produces a decodable file and microphone denial leaves recording available",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 19864,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-06T17:43:49.564Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "8e083ab60749e97c3fb3-d392af94926be1782228",
+          "file": "studio.spec.cjs",
+          "line": 209,
+          "column": 1
+        },
+        {
+          "title": "high-resolution camera frames encode playable video at all five aspect ratios",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 6878,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "High-resolution video verification {\"photoSquare\":[2160,2160],\"unsafeRejected\":true,\"videos\":[{\"aspect\":\"16:9\",\"width\":1920,\"height\":1080,\"format\":\"mp4\",\"bytes\":87250},{\"aspect\":\"4:3\",\"width\":1662,\"height\":1246,\"format\":\"mp4\",\"bytes\":87318},{\"aspect\":\"1:1\",\"width\":1440,\"height\":1440,\"format\":\"mp4\",\"bytes\":86539},{\"aspect\":\"3:4\",\"width\":1246,\"height\":1662,\"format\":\"mp4\",\"bytes\":87341},{\"aspect\":\"9:16\",\"width\":1080,\"height\":1920,\"format\":\"mp4\",\"bytes\":87126}]}\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-06T17:44:09.434Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "8e083ab60749e97c3fb3-a8d3af07470609ad4ec7",
+          "file": "studio.spec.cjs",
+          "line": 223,
+          "column": 1
+        },
+        {
+          "title": "a failed video chunk is retried in order without losing the video header",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 8823,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-06T17:44:16.317Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "8e083ab60749e97c3fb3-7827b4529edeeed3aa68",
+          "file": "studio.spec.cjs",
+          "line": 264,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-11-06T17:38:59.910Z",
+    "duration": 325246.402,
+    "expected": 19,
+    "skipped": 1,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}

@@ -1,3 +1,5 @@
+import { EXTRA_EFFECTS, extraTransforms, extraColors } from './extra-effects.js';
+
 export const EFFECTS = [
   { id: 0, name: '原片', en: 'Original', category: 'style', description: '不加修饰，就很好看。', css: 'none' },
   { id: 1, name: '复古胶片', en: 'Vintage', category: 'style', description: '暖色、颗粒，像一段旧时光。', css: 'sepia(.45) saturate(.75) contrast(.92)' },
@@ -58,7 +60,8 @@ export const EFFECTS = [
   {"id": 56, "name": "彩色速写", "en": "Color sketch", "category": "art", "description": "用彩色线条勾勒小小艺术家。"},
   {"id": 57, "name": "铬金属", "en": "Chrome", "category": "art", "description": "银蓝金属的闪亮光泽。"},
   {"id": 58, "name": "彩虹光斑", "en": "Prism", "category": "art", "description": "让边缘散开一点彩虹光。"},
-  {"id": 59, "name": "星河闪闪", "en": "Stardust", "category": "art", "description": "轻轻闪烁的星点，适合录小视频。"}
+  {"id": 59, "name": "星河闪闪", "en": "Stardust", "category": "art", "description": "轻轻闪烁的星点，适合录小视频。"},
+  ...EXTRA_EFFECTS
 ];
 
 const vertexSource = [
@@ -106,6 +109,7 @@ const fragmentSource = [
   'if(u_effect==44 || u_effect==45){vec2 center=vec2(.5,.66);vec2 d=(uv-center)*vec2(u_aspect,1.);float fall=1.-smoothstep(0.,.43,length(d));float amt=u_effect==44?-.65:.9;q=center+(uv-center)*(1.+amt*s*fall);}',
   'if(u_effect==46){q.x=.5+(uv.x-.5)*(1.-.45*s);}',
   'if(u_effect==47){q.y=.5+(uv.y-.5)*(1.-.45*s);}',
+  extraTransforms,
   'vec3 c=sampleAt(q);vec3 outColor=c;float y=lum(c);',
   'if(u_effect==1){outColor=vec3(dot(c,vec3(.393,.769,.189)),dot(c,vec3(.349,.686,.168)),dot(c,vec3(.272,.534,.131)));outColor=mix(c,outColor,.55);outColor=(outColor-.5)*.9+.53;outColor+=vec3(.035,.005,-.025);outColor+=(random(uv*900.)-.5)*.065;outColor*=1.-.20*smoothstep(.25,.85,distance(uv,vec2(.5)));}',
   'if(u_effect==2){outColor=vec3(clamp((y-.5)*1.3+.5,0.,1.));}',
@@ -157,6 +161,7 @@ const fragmentSource = [
   "if(u_effect==57){outColor=vec3(.58,.7,.84)*(.55+.45*cos(y*18.))+c*.2;}",
   "if(u_effect==58){float d=.012*length(uv-.5);outColor=vec3(sampleAt(q+vec2(d,0.)).r,c.g,sampleAt(q-vec2(d,0.)).b)+vec3(.03,.01,.04);}",
   "if(u_effect==59){vec2 tile=floor(uv*vec2(36.,36./u_aspect));vec2 f=fract(uv*vec2(36.,36./u_aspect))-.5;float spark=step(.95,random(tile))*max(0.,1.-length(f)*7.)*(.5+.5*sin(u_time*2.+random(tile)*30.));outColor=c*.94+vec3(.6,.45,.8)*spark;}",
+  extraColors,
   'if(u_effect>=48)outColor=mix(c,outColor,s);',
   'gl_FragColor=vec4(clamp(outColor,0.,1.),1.);',
   '}'
