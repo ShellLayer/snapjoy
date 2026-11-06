@@ -16,7 +16,11 @@ const config = require('../package.json');
   execFileSync('/usr/bin/codesign', ['--verify', '--deep', '--strict', '--verbose=2', appPath]);
   const architecture = execFileSync('/usr/bin/lipo', ['-archs', path.join(appPath, 'Contents', 'MacOS', '拾光相机')], { encoding: 'utf8' }).trim();
   if (architecture !== (process.arch === 'x64' ? 'x86_64' : 'arm64')) throw new Error('Unexpected app architecture: ' + architecture);
-  const translated = process.arch === 'x64' && execFileSync('/usr/sbin/sysctl', ['-in', 'sysctl.proc_translated'], { encoding: 'utf8' }).trim() === '1';
+  let translated = false;
+  if (process.arch === 'x64') {
+    try { translated = execFileSync('/usr/sbin/sysctl', ['-in', 'sysctl.proc_translated'], { encoding: 'utf8' }).trim() === '1'; }
+    catch { /* The translation flag is absent on physical Intel Macs. */ }
+  }
   const output = { passed: true, platform: 'darwin', arch: process.arch, translated, version, minimumMacOS: '13.0', cameraDescription,
     signature: 'ad-hoc', notarized: false, architecture, checkedAt: new Date().toISOString() };
   const directory = path.resolve(__dirname, '..', 'docs', config.version);
