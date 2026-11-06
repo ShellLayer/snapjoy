@@ -3,12 +3,13 @@ const fs = require('node:fs/promises');
 const path = require('node:path');
 const os = require('node:os');
 const root = path.resolve(__dirname, '..');
+const { graphicsArgs } = require('../tools/test-graphics.cjs');
 
 async function launch(dataDir, fake = true) {
   const env = { ...process.env, LUMI_TEST: '1', LUMI_TEST_DATA: dataDir };
   delete env.ELECTRON_RUN_AS_NODE;
   const app = await electron.launch({
-    args: [root, '--use-angle=swiftshader', '--enable-unsafe-swiftshader', ...(fake ? ['--use-fake-device-for-media-stream'] : [])],
+    args: [root, ...graphicsArgs, ...(fake ? ['--use-fake-device-for-media-stream'] : [])],
     env, timeout: 30000
   });
   const page = await app.firstWindow();

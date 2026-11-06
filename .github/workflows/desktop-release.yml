@@ -43,6 +43,8 @@ jobs:
           cache: npm
       - name: Install locked dependencies
         run: npm ci
+      - name: Select available test graphics backend
+        run: node tools/probe-graphics.cjs
       - name: Run functional and platform tests
         run: npm test
       - name: Build native packages

@@ -3,9 +3,10 @@ const fs=require('node:fs/promises');
 const path=require('node:path');
 const os=require('node:os');
 const root=path.resolve(__dirname,'..');
+const {graphicsArgs}=require('../tools/test-graphics.cjs');
 async function launch(dataDir){
   const env={...process.env,LUMI_TEST:'1',LUMI_TEST_DATA:dataDir};delete env.ELECTRON_RUN_AS_NODE;
-  const app=await electron.launch({args:[root,'--use-fake-device-for-media-stream','--use-angle=swiftshader','--enable-unsafe-swiftshader'],env,timeout:30000});
+  const app=await electron.launch({args:[root,'--use-fake-device-for-media-stream',...graphicsArgs],env,timeout:30000});
   const page=await app.firstWindow();await expect(page.locator('.effect-card')).toHaveCount(48);
   return {app,page};
 }

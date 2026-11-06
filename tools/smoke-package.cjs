@@ -4,6 +4,7 @@ const path = require('node:path');
 const os = require('node:os');
 const root = path.resolve(__dirname, '..');
 const config = require('../package.json');
+const { graphicsArgs } = require('./test-graphics.cjs');
 const releaseDir = path.join(root, config.build.directories.output);
 const isMac = process.platform === 'darwin';
 const executablePath = isMac
@@ -14,7 +15,7 @@ const executablePath = isMac
   const env = { ...process.env }; delete env.ELECTRON_RUN_AS_NODE;
   const app = await electron.launch({
     executablePath,
-    args: ['--user-data-dir='+userData,'--use-fake-device-for-media-stream','--use-angle=swiftshader','--enable-unsafe-swiftshader'],
+    args: ['--user-data-dir='+userData,'--use-fake-device-for-media-stream',...graphicsArgs],
     env, timeout:30000
   });
   try {
