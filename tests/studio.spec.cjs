@@ -8,7 +8,8 @@ async function launch(width=1280,height=720){
   const dir=await fs.mkdtemp(path.join(os.tmpdir(),'snapjoy-studio-'));
   const env={...process.env,LUMI_TEST:'1',LUMI_TEST_DATA:dir};delete env.ELECTRON_RUN_AS_NODE;
   const app=await electron.launch({args:[root,'--use-fake-device-for-media-stream',...graphicsArgs],env});
-  const page=await app.firstWindow();await expect(page.locator('.effect-card')).toHaveCount(60);
+  try{
+  const page=await app.firstWindow();await expect(page.locator('.effect-card')).toHaveCount(60,{timeout:process.env.CI?60000:15000});
   await page.evaluate(({width,height})=>{
     const get=navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
     navigator.mediaDevices.getUserMedia=async options=>{
@@ -18,6 +19,7 @@ async function launch(width=1280,height=720){
     };
   },{width,height});
   return {app,page,dir};
+  }catch(error){await close(app);throw error;}
 }
 async function close(app){await app.evaluate(({BrowserWindow})=>BrowserWindow.getAllWindows().forEach(w=>w.destroy())).catch(()=>{});await app.close();}
 async function recordedSeconds(page,seconds){await expect.poll(async()=>{const t=(await page.locator('#recordingTime').textContent()).split(':').map(Number);return t[0]*60+t[1];}).toBeGreaterThanOrEqual(seconds);}
