@@ -19,6 +19,8 @@ jobs:
     name: Build ${{ matrix.name }}
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 25
+    env:
+      SNAPJOY_PACKAGE_ARCH: ${{ matrix.arch }}
     strategy:
       fail-fast: false
       matrix:
@@ -26,26 +28,33 @@ jobs:
           - name: macOS-Apple-Silicon
             runner: macos-15
             arch: arm64
+            tools-arch: arm64
             command: npm run dist:mac -- --arm64
           # Intel-hosted VMs expose no WebGL. Test x64 on the preinstalled Rosetta
           # runtime so both architectures exercise the full graphics pipeline.
           - name: macOS-Intel-Rosetta
             runner: macos-15
             arch: x64
+            tools-arch: arm64
             command: npm run dist:mac -- --x64
           - name: Windows-x64
             runner: windows-2025
             arch: x64
+            tools-arch: x64
             command: npm run dist -- --publish never
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          architecture: ${{ matrix.arch }}
+          architecture: ${{ matrix.tools-arch }}
           cache: npm
       - name: Install locked dependencies
         run: npm ci
+      - name: Install the exact Electron architecture
+        env:
+          ELECTRON_INSTALL_ARCH: ${{ matrix.arch }}
+        run: npx install-electron
       - name: Select available test graphics backend
         run: node tools/probe-graphics.cjs
       - name: Run functional and platform tests

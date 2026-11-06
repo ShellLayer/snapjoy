@@ -4,11 +4,11 @@ const path = require('node:path');
 const os = require('node:os');
 const root = path.resolve(__dirname, '..');
 const config = require('../package.json');
-const { graphicsArgs } = require('./test-graphics.cjs');
+const { graphicsArgs, packageArch } = require('./test-graphics.cjs');
 const releaseDir = path.join(root, config.build.directories.output);
 const isMac = process.platform === 'darwin';
 const executablePath = isMac
-  ? path.join(releaseDir,process.arch === 'arm64' ? 'mac-arm64' : 'mac','拾光相机.app','Contents','MacOS','拾光相机')
+  ? path.join(releaseDir,packageArch === 'arm64' ? 'mac-arm64' : 'mac','拾光相机.app','Contents','MacOS','拾光相机')
   : path.join(releaseDir,'win-unpacked','拾光相机.exe');
 (async () => {
   const userData = await fs.mkdtemp(path.join(os.tmpdir(), 'lumi-package-'));
@@ -48,8 +48,10 @@ const executablePath = isMac
     const packaged=await app.evaluate(({app})=>app.isPackaged);
     const appVersion=await app.evaluate(({app})=>app.getVersion());
     if(appVersion!==config.version)throw new Error('Packaged version does not match package.json');
-    const result={passed:true,version:config.version,platform:process.platform,arch:process.arch,packaged,...initial,camera,stickers,frames,trackingStatus,testSource:'simulated camera; no photos captured',checkedAt:new Date().toISOString()};
-    await fs.writeFile(path.join(root,'docs',config.version,`package-verification-${process.platform}-${process.arch}.json`),JSON.stringify(result,null,2));
+    const appArch=await app.evaluate(()=>process.arch);
+    if(appArch!==packageArch)throw new Error('Packaged architecture differs from the requested target');
+    const result={passed:true,version:config.version,platform:process.platform,arch:appArch,testHostArch:process.arch,translated:isMac&&process.arch==='arm64'&&appArch==='x64',packaged,...initial,camera,stickers,frames,trackingStatus,testSource:'simulated camera; no photos captured',checkedAt:new Date().toISOString()};
+    await fs.writeFile(path.join(root,'docs',config.version,`package-verification-${process.platform}-${packageArch}.json`),JSON.stringify(result,null,2));
     console.log(JSON.stringify(result,null,2));
   } finally { await app.close(); }
 })().catch(error=>{console.error(error);process.exitCode=1;});

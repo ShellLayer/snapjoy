@@ -3,6 +3,7 @@ const fs = require('node:fs/promises');
 const path = require('node:path');
 const os = require('node:os');
 const config = require('../package.json');
+const { packageArch } = require('./test-graphics.cjs');
 
 (async () => {
   const candidates = process.platform === 'darwin' ? [
@@ -19,6 +20,8 @@ const config = require('../package.json');
     const app = await electron.launch({ args: [path.resolve(__dirname, '..'), ...args], env });
     try {
       const page = await app.firstWindow();
+      const appArch = await app.evaluate(() => process.arch);
+      if (process.env.SNAPJOY_PACKAGE_ARCH && appArch !== packageArch) throw new Error('Development Electron architecture does not match the target');
       const result = await page.evaluate(() => {
         const gl = document.createElement('canvas').getContext('webgl');
         const gl2 = document.createElement('canvas').getContext('webgl2');
@@ -29,7 +32,7 @@ const config = require('../package.json');
         if (process.env.GITHUB_ENV) await fs.appendFile(process.env.GITHUB_ENV, 'SNAPJOY_TEST_GL_ARGS=' + JSON.stringify(args) + '\n');
         const directory = path.resolve(__dirname, '..', 'docs', config.version);
         await fs.mkdir(directory, { recursive: true });
-        await fs.writeFile(path.join(directory, `graphics-${process.platform}-${process.arch}.json`), JSON.stringify({ args, ...result }, null, 2));
+        await fs.writeFile(path.join(directory, `graphics-${process.platform}-${packageArch}.json`), JSON.stringify({ args, appArch, testHostArch:process.arch, ...result }, null, 2));
         return;
       }
     } finally { await app.close(); }

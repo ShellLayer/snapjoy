@@ -3,7 +3,7 @@ const fs = require('node:fs/promises');
 const path = require('node:path');
 const os = require('node:os');
 const root = path.resolve(__dirname, '..');
-const { graphicsArgs } = require('../tools/test-graphics.cjs');
+const { graphicsArgs, packageArch } = require('../tools/test-graphics.cjs');
 
 async function launch(dataDir, fake = true) {
   const env = { ...process.env, LUMI_TEST: '1', LUMI_TEST_DATA: dataDir };
@@ -31,6 +31,7 @@ test('camera, every effect, true PNG capture, mirror, local persistence and priv
   const errors = []; page.on('pageerror', (e) => errors.push(e.message));
   try {
     await expect(page).toHaveTitle('拾光相机 · SnapJoy');
+    if (process.env.SNAPJOY_PACKAGE_ARCH) expect(await app.evaluate(() => process.arch)).toBe(packageArch);
     expect(await page.evaluate(() => window.booth.platform)).toBe(process.platform);
     await expect(page.locator('.titlebar-label')).toHaveText('SNAPJOY');
     await expect(page.locator('#welcome')).toBeVisible();
