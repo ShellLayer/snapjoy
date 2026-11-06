@@ -1,4 +1,5 @@
 const paths = {
+  video: '<rect x="3" y="5" width="12" height="14" rx="3"/><path d="m15 9 6-4v14l-6-4Z"/>',
   camera: '<path d="M14 5h-4L8.5 8H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-3.5L14 5Z"/><circle cx="12" cy="14" r="3.5"/><path d="M17.5 10.5h.01"/>',
   minus: '<path d="M5 12h14"/>',
   square: '<rect x="5" y="5" width="14" height="14" rx="2"/>',

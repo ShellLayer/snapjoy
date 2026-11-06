@@ -7,6 +7,7 @@
   <title>拾光相机 · SnapJoy</title>
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="playroom.css">
+  <link rel="stylesheet" href="studio.css">
 </head>
 <body>
   <div class="titlebar">
@@ -32,8 +33,13 @@
   <main class="workspace">
     <section class="camera-column" aria-label="拍照工作区">
       <div class="section-line">
-        <div class="section-title"><span class="eyebrow">THE PHOTO BOOTH</span><h1>今天，也值得被记录。</h1></div>
+        <div class="section-title"><h1>你的变装摄影棚</h1></div>
         <div id="cameraStatus" class="camera-status"><i></i><span>相机未开启</span></div>
+      </div>
+      <div class="format-bar">
+        <label>画幅<select id="aspectSelect" aria-label="照片和视频画幅"><option value="16:9">16:9 横屏</option><option value="4:3">4:3 经典</option><option value="1:1">1:1 方形</option><option value="3:4">3:4 人像</option><option value="9:16">9:16 竖屏</option></select></label>
+        <label>尺寸<select id="sizeSelect" aria-label="输出尺寸"><option value="0">相机原生</option><option value="640">小图 · 长边 640</option><option value="1280">高清 · 长边 1280</option><option value="1920">全高清 · 长边 1920</option><option value="3840">超清 · 长边 3840</option></select></label>
+        <button id="focusButton" class="soft-button" aria-pressed="false" title="收起素材和胶卷，让取景画面更大（F）">⛶ 大取景</button>
       </div>
       <div class="viewfinder" id="viewfinder">
         <video id="cameraVideo" autoplay playsinline muted hidden></video>
@@ -62,6 +68,7 @@
         <div id="flashOverlay" class="flash-overlay"></div>
         <button id="cancelCapture" class="cancel-capture" hidden>取消拍摄 <kbd>Esc</kbd></button>
         <div id="burstProgress" class="burst-progress" hidden></div>
+        <div id="recordingHud" class="recording-hud" hidden><i></i><span id="recordingTime">00:00</span><span id="recordingState">录制中</span><button id="pauseRecording">暂停</button></div>
       </div>
       <div class="viewfinder-meta">
         <label class="device-picker"><span data-icon="webcam"></span><select id="cameraSelect" aria-label="选择摄像头"><option value="">系统默认摄像头</option></select></label>
@@ -74,16 +81,18 @@
       <div class="capture-controls">
         <div class="mode-control" role="group" aria-label="拍摄模式">
           <button class="mode-button active" data-mode="single" aria-pressed="true" title="单张照片"><span data-icon="square"></span>单张</button>
+          <button class="mode-button" data-mode="video" aria-pressed="false" title="录制带有特效和贴纸的视频"><span data-icon="video"></span>录像</button>
           <button class="mode-button" data-mode="strip" aria-pressed="false" title="连续拍摄四张，生成照片条"><span data-icon="film"></span>四连拍</button>
         </div>
         <div class="shutter-wrap"><button id="shutter" class="shutter" aria-label="拍照" title="拍照（空格键）" disabled><span data-icon="camera"></span></button><span id="shutterHint">按 <kbd>空格</kbd> 拍照</span></div>
         <div class="capture-options">
+          <label id="audioControl" class="audio-control" hidden><input id="recordAudio" type="checkbox">录制声音</label>
           <label class="timer-control" title="拍照倒计时"><span data-icon="timer"></span><select id="timerSelect" aria-label="倒计时"><option value="0">即拍</option><option value="3" selected>3 秒</option><option value="5">5 秒</option><option value="10">10 秒</option></select></label>
           <button id="mirrorButton" class="icon-button selected" aria-label="镜像" aria-pressed="true" title="镜像预览与照片"><span data-icon="mirror"></span></button>
         </div>
       </div>
       <section class="recent-section">
-        <div class="recent-heading"><h2>刚刚的好时光 <span id="recentCount">0</span></h2><button id="folderButton" class="text-button"><span data-icon="folder"></span>照片文件夹<span data-icon="arrow-up-right"></span></button></div>
+        <div class="recent-heading"><h2>最近作品 <span id="recentCount">0</span></h2><button id="folderButton" class="text-button"><span data-icon="folder"></span>作品文件夹<span data-icon="arrow-up-right"></span></button></div>
         <div id="recentPhotos" class="recent-photos"></div>
         <div id="emptyGallery" class="empty-gallery"><div class="empty-frames"><i><span data-icon="sun"></span></i><i><span data-icon="smile"></span></i></div><div><strong>第一张，就从现在开始。</strong><p>拍下的照片会出现在这里。</p></div></div>
       </section>
@@ -91,7 +100,8 @@
 
     <aside class="effects-panel" aria-label="特效与贴纸">
       <div class="effects-heading"><div><span class="eyebrow">LET YOUR IMAGINATION PLAY</span><h2>今天变成谁<span>✦</span></h2></div><button id="randomLook" class="random-look" title="随机搭配特效、贴纸和相框">🎲<small>换个造型</small></button></div>
-      <div class="play-tabs" role="group" aria-label="装扮类型"><button class="active" data-panel="effects" aria-pressed="true">特效 <span id="effectTotal">48</span></button><button data-panel="stickers" aria-pressed="false">贴纸 <span id="stickerTotal">96</span></button><button data-panel="frames" aria-pressed="false">相框 <span id="frameTotal">12</span></button></div>
+      <div class="play-tabs" role="group" aria-label="装扮类型"><button class="active" data-panel="effects" aria-pressed="true">特效 <span id="effectTotal">60</span></button><button data-panel="stickers" aria-pressed="false">贴纸 <span id="stickerTotal">120</span></button><button data-panel="frames" aria-pressed="false">相框 <span id="frameTotal">24</span></button></div>
+      <label class="look-picker">一键造型<select id="lookSelect" aria-label="一键造型"><option value="">自由搭配</option></select></label>
       <div class="catalog-search"><input id="catalogSearch" type="search" placeholder="搜索特效，例如：大头" aria-label="搜索特效、贴纸或相框"><button id="resetLook" title="恢复原片，清空贴纸和相框" aria-label="重置造型">重置</button></div>
       <div id="effectTabs" class="effect-tabs" role="group" aria-label="特效分类"><button data-category="all" class="active" aria-pressed="true">全部</button><button data-category="style" aria-pressed="false">氛围</button><button data-category="fun" aria-pressed="false">搞怪</button><button data-category="art" aria-pressed="false">绘画</button></div>
       <div id="stickerTabs" class="sticker-tabs" role="group" aria-label="贴纸分类" hidden></div>
@@ -106,6 +116,9 @@
         <div class="sticker-toolbar"><span>已贴 <b id="placedCount">0</b> / 20</span><button id="undoSticker" title="撤销上一步装饰操作">撤销</button><button id="clearStickers">清空贴纸</button></div>
         <div id="stickerEditor" hidden>
           <div class="selected-sticker-title"><strong id="selectedStickerName"></strong><button id="removeSticker" class="tiny-button" title="移除选中贴纸" aria-label="移除选中贴纸"><span data-icon="trash"></span></button></div>
+          <label class="anchor-picker">跟随位置<select id="anchorSelect" aria-label="贴纸跟随位置"></select></label>
+          <div class="sticker-slider"><label for="stickerOffsetX">左右</label><input id="stickerOffsetX" type="range" min="-100" max="100" value="0" aria-label="跟随位置左右偏移"><output id="stickerOffsetXValue">0</output></div>
+          <div class="sticker-slider"><label for="stickerOffsetY">上下</label><input id="stickerOffsetY" type="range" min="-100" max="100" value="0" aria-label="跟随位置上下偏移"><output id="stickerOffsetYValue">0</output></div>
           <div class="sticker-slider"><label for="stickerSize">大小</label><input id="stickerSize" type="range" min="35" max="250" value="100" aria-label="贴纸大小"><output id="stickerSizeValue">100%</output></div>
           <div class="sticker-slider"><label for="stickerRotation">旋转</label><input id="stickerRotation" type="range" min="-180" max="180" value="0" aria-label="贴纸旋转"><output id="stickerRotationValue">0°</output></div>
           <div class="sticker-tools"><label><input id="followFace" type="checkbox">跟随人脸</label><button id="duplicateSticker">复制</button><button id="frontSticker">置顶</button></div>
@@ -121,18 +134,18 @@
 
   <dialog id="albumDialog" class="album-dialog">
     <div class="dialog-heading"><div><span class="eyebrow">YOUR LITTLE COLLECTION</span><h2>我的相册 <span id="dialogPhotoCount">0</span></h2></div><button class="icon-button" data-close="albumDialog" aria-label="关闭相册"><span data-icon="x"></span></button></div>
-    <div id="albumGrid" class="album-grid"></div><p id="albumEmpty" class="dialog-empty">还没有照片。回到相机，留住你的第一个瞬间。</p>
-    <div class="album-footer"><span>原图保存在电脑的「图片 / 拾光相机」文件夹</span><button id="albumFolder" class="soft-button"><span data-icon="folder"></span>打开文件夹</button></div>
+    <div id="albumGrid" class="album-grid"></div><p id="albumEmpty" class="dialog-empty">还没有作品。拍一张照片，或录一段开心的小视频。</p>
+    <div class="album-footer"><span>照片和视频保存在电脑的「图片 / 拾光相机」文件夹</span><button id="albumFolder" class="soft-button"><span data-icon="folder"></span>打开文件夹</button></div>
   </dialog>
   <dialog id="photoDialog" class="photo-dialog">
     <div class="photo-topbar"><span id="photoInfo"></span><button class="icon-button" data-close="photoDialog" aria-label="关闭照片"><span data-icon="x"></span></button></div>
-    <div class="photo-stage"><button id="previousPhoto" class="photo-arrow" aria-label="上一张"><span data-icon="chevron-left"></span></button><img id="fullPhoto" alt="拍摄的照片"><button id="nextPhoto" class="photo-arrow" aria-label="下一张"><span data-icon="chevron-right"></span></button></div>
+    <div class="photo-stage"><button id="previousPhoto" class="photo-arrow" aria-label="上一张"><span data-icon="chevron-left"></span></button><img id="fullPhoto" alt="拍摄的照片"><video id="fullVideo" controls playsinline preload="metadata" hidden aria-label="录制的视频"></video><button id="nextPhoto" class="photo-arrow" aria-label="下一张"><span data-icon="chevron-right"></span></button></div>
     <div class="photo-actions"><button id="deletePhoto" class="text-button danger"><span data-icon="trash"></span>删除</button><div><button id="showPhoto" class="soft-button"><span data-icon="folder"></span>在文件夹中查看</button><button id="exportPhoto" class="primary-button"><span data-icon="download"></span>另存为</button></div></div>
     <div id="deleteConfirmation" class="delete-confirmation" hidden><p>将这张照片移到回收站？</p><small id="deleteRecoveryHint">需要时可以从 Windows 回收站恢复原图。</small><div><button id="cancelDelete" class="soft-button">保留</button><button id="confirmDelete" class="primary-button">移到回收站</button></div></div>
   </dialog>
   <dialog id="helpDialog" class="help-dialog">
     <div class="dialog-heading"><div><span class="eyebrow">A SMALL GUIDE</span><h2>你好，欢迎来到拾光。</h2></div><button class="icon-button" data-close="helpDialog" aria-label="关闭帮助"><span data-icon="x"></span></button></div>
-    <div class="help-body"><p>连接摄像头，点击「开启摄像头」，开始今天的变装游戏。</p><div class="help-step"><b>01</b><div><strong>特效、贴纸、相框，自由搭配</strong><p>48 种效果、96 款贴纸、12 款相框。搜索喜欢的动物或造型，也可点击骰子随机搭配。</p></div></div><div class="help-step"><b>02</b><div><strong>动动脑袋，拖拖贴纸</strong><p>头饰和眼镜默认跟随画面中的主要一张脸。拖动贴纸即可改为手动；在贴纸面板调整大小、旋转或重新勾选跟随。可叠加 20 张，支持撤销。强烈变形时可关闭跟随手动微调。</p></div></div><div class="help-step"><b>03</b><div><strong>把造型一起拍下来</strong><p>单张和四连拍都会保存贴纸、相框。照片自动保存在「图片 / 拾光相机」，可另存或移到回收站。</p></div></div><div class="keyboard-help"><span><kbd>空格</kbd> 拍照</span><span><kbd>Esc</kbd> 取消 / 关闭</span><span><kbd>Delete</kbd> 移除贴纸</span></div><p class="privacy-copy"><span data-icon="shield"></span>摄像头画面、贴纸跟随和照片都在本机处理，无需联网，不采集声音。人脸定位只用于放置贴纸，不识别身份。</p><button id="helpCameraSettings" class="text-button">摄像头打不开？查看 Windows 隐私设置<span data-icon="arrow-up-right"></span></button></div>
+    <div class="help-body"><p>连接摄像头，点击「开启摄像头」，开始今天的变装游戏。</p><div class="help-step"><b>01</b><div><strong>特效、贴纸、相框，自由搭配</strong><p>60 种效果、120 款原创脸部配饰、24 款相框和 24 套造型。点选造型快速搭配，或搜索喜欢的配饰。</p></div></div><div class="help-step"><b>02</b><div><strong>动动脑袋，拖拖贴纸</strong><p>配饰默认跟随主要一张脸。可选头顶、额头、眼睛、鼻子、嘴、脸颊、下巴或脖子，再微调左右、上下、大小与旋转。左右以取景画面为准。拖动会切换为手动摆放，可重新勾选跟随。最多叠加 20 张。</p></div></div><div class="help-step"><b>03</b><div><strong>把造型一起拍下来</strong><p>画幅支持横屏、方形和竖屏；尺寸按所选长边缩放，不放大低分辨率摄像头。录像支持暂停／继续，最长 10 分钟，声音默认关闭。特效、贴纸、相框都会保存在作品中。</p></div></div><div class="keyboard-help"><span><kbd>空格</kbd> 拍照／录制</span><span><kbd>F</kbd> 大取景</span><span><kbd>Esc</kbd> 取消 / 关闭</span><span><kbd>Delete</kbd> 移除贴纸</span></div><p class="privacy-copy"><span data-icon="shield"></span>摄像头画面、贴纸跟随和作品都在本机处理，无需联网。仅在录像时勾选「录制声音」才会申请麦克风权限，停止后立即释放。人脸定位只用于放置贴纸，不识别身份。</p><button id="helpCameraSettings" class="text-button">摄像头打不开？查看 Windows 隐私设置<span data-icon="arrow-up-right"></span></button><button id="helpMicrophoneSettings" class="text-button">声音录不进来？查看麦克风设置</button></div>
   </dialog>
   <div id="toast" class="toast" role="status" aria-live="polite" hidden><span data-icon="check"></span><span id="toastText"></span><button id="toastRetry" hidden>重试保存</button></div>
   <script type="module" src="app.js"></script>

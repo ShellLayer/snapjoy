@@ -1,7 +1,9 @@
 import { EFFECTS, EffectRenderer, BasicRenderer, createSample } from './effects.js';
 import { hydrateIcons, icon } from './icons.js';
-import { STICKERS, STICKER_CATEGORIES, FRAMES, DecorationScene, stickerById, stickerImage, drawFrame } from './stickers.js';
+import { STICKERS, STICKER_CATEGORIES, FRAMES, ANCHORS, DecorationScene, stickerById, stickerImage, drawFrame } from './stickers.js';
 import { FaceTracker } from './face-tracker.js';
+import { ASPECTS, outputSize } from './capture-settings.js';
+import { BoothRecorder } from './recorder.js';
 
 const $ = (id) => document.getElementById(id);
 hydrateIcons();
@@ -35,16 +37,20 @@ const scene = new DecorationScene(() => {
 });
 try { scene.restore(JSON.parse(localStorage.getItem('lumi:scene:v1') || '{}')); } catch {}
 const tracker = new FaceTracker((face) => { scene.face = face; updateFaceStatus(); drawDecorations(); }, updateFaceStatus);
-const settings = { effect: 0, intensity: 75, mirror: true, timer: 3, mode: 'single', grid: false };
+const settings = { effect: 0, intensity: 75, mirror: true, timer: 3, mode: 'single', grid: false, aspect:'16:9', size:0 };
 try {
   const saved = JSON.parse(localStorage.getItem('lumi:settings') || '{}');
   if (EFFECTS.some((e) => e.id === saved.effect)) settings.effect = saved.effect;
   if (Number.isFinite(saved.intensity)) settings.intensity = Math.min(100, Math.max(0, saved.intensity));
   if (typeof saved.mirror === 'boolean') settings.mirror = saved.mirror;
   if ([0,3,5,10].includes(saved.timer)) settings.timer = saved.timer;
-  if (saved.mode === 'strip') settings.mode = 'strip';
+  if (['single','strip','video'].includes(saved.mode)) settings.mode = saved.mode;
+  if (ASPECTS[saved.aspect]) settings.aspect=saved.aspect;
+  if ([0,640,1280,1920,3840].includes(saved.size)) settings.size=saved.size;
   if (typeof saved.grid === 'boolean') settings.grid = saved.grid;
 } catch { /* A corrupt preference must never prevent opening the camera. */ }
+const recorder = new BoothRecorder(api, tick => {if(tick)$('recordingTime').textContent=formatTime(recorder.elapsed);else updateControls();}, result => { photos.unshift(result);renderGallery();toast('视频已保存到本地相册。'); }, (error,retry=false)=>toast(error.message,true,retry));
+const formatTime=seconds=>Math.floor(seconds/60).toString().padStart(2,'0')+':'+Math.floor(seconds%60).toString().padStart(2,'0');
 const persist = () => { try { localStorage.setItem('lumi:settings', JSON.stringify(settings)); } catch {} };
 
 function initializeRenderers() {
@@ -89,10 +95,28 @@ function setCameraStatus(label, active) {
   $('cameraStatus').classList.toggle('on', active);
 }
 function updateControls() {
-  const busy = !!captureTask;
-  $('shutter').disabled = !running || busy || !galleryAvailable || !!pendingPhoto;
+  const busy = !!captureTask || recorder.busy;
+  const recording = ['recording','paused'].includes(recorder.state);
+  $('shutter').disabled = recording ? false : !running || busy || !galleryAvailable || !!pendingPhoto || !!recorder.pending;
+  $('shutter').classList.toggle('recording',recording);
+  $('shutter').setAttribute('aria-label',recording?'停止录像并保存':settings.mode==='video'?'开始录像':'拍照');
+  $('shutter').title=recording?'停止录像并保存（空格键）':settings.mode==='video'?'开始录像（空格键）':'拍照（空格键）';
+  $('shutter').querySelector('span').innerHTML=icon(settings.mode==='video'?'video':'camera');
+  $('audioControl').hidden=settings.mode!=='video';
+  $('recordAudio').disabled=busy;
+  $('timerSelect').closest('label').hidden=settings.mode==='video';
+  $('recordingHud').hidden=!recorder.busy;
+  $('recordingHud').classList.toggle('paused',recorder.state==='paused');
+  $('recordingTime').textContent=formatTime(recorder.elapsed);
+  $('recordingState').textContent=({starting:'准备录制…',recording:'录制中',paused:'已暂停',saving:'正在保存…'})[recorder.state]||'';
+  $('pauseRecording').disabled=!recording;
+  $('pauseRecording').textContent=recorder.state==='paused'?'继续':'暂停';
+  for(const id of ['aspectSelect','sizeSelect','lookSelect'])$(id).disabled=busy;
+  $('sizeSelect').querySelector('[value="3840"]').disabled=settings.mode!=='single';
+  $('sizeSelect').options[0].text=settings.mode==='single'?'相机原生':'相机原生 · 最高 1920';
+  updateResolutionLabel();
   $('startCamera').disabled = connecting;
-  $('powerButton').disabled = !running && !connecting;
+  $('powerButton').disabled = recorder.busy || (!running && !connecting);
   $('cameraSelect').disabled = busy || connecting;
   $('timerSelect').disabled = busy;
   $('mirrorButton').disabled = busy;
@@ -106,7 +130,7 @@ function updateControls() {
   decorationCanvas.hidden = !running;
   $('activeEffectBadge').textContent = EFFECTS[settings.effect].name;
   $('effectDescription').textContent = EFFECTS[settings.effect].description;
-  $('shutterHint').textContent = busy ? '正在留住这一刻…' : settings.mode === 'strip' ? '连拍四张 · 合成照片条' : '按空格键拍照';
+  $('shutterHint').textContent = recorder.busy ? '空格结束 · 最长 10 分钟' : settings.mode==='video' ? '录下你的造型 · 最长 10 分钟' : busy ? '正在留住这一刻…' : settings.mode === 'strip' ? '连拍四张 · 合成照片条' : '按空格键拍照';
   document.querySelectorAll('.mode-button').forEach((button) => {
     button.disabled = busy;
     const active = button.dataset.mode === settings.mode;
@@ -158,22 +182,30 @@ function renderThumbnails() {
   }
 }
 function resolution() {
-  const width = Math.min(video.videoWidth, video.videoHeight * 4/3, 1920);
-  const w = Math.max(4, Math.floor(width / 4) * 4);
-  return [w, w * 3 / 4];
+  const max=settings.mode==='video'||settings.mode==='strip'?1920:3840;
+  return outputSize(video.videoWidth||1920,video.videoHeight||1080,ASPECTS[settings.aspect],Math.min(settings.size||max,max));
 }
+function updateResolutionLabel(){
+  if(!running)return;
+  const [w,h]=resolution();
+  $('resolutionLabel').textContent=w+' × '+h+' · '+(settings.mode==='video'?'录像':'照片');
+  $('resolutionLabel').title='实际保存尺寸；根据摄像头原生画面居中裁切，不拉伸、不放大。录像与四连拍单格最长边 1920。';
+}
+
 function renderMain() {
   if (!running || video.readyState < 2) return;
   renderer.upload(video);
   const [width, height] = resolution();
   renderer.draw(settings.effect, settings.intensity / 100, settings.mirror, width, height, reduceMotion ? 0 : performance.now()/1000);
+  scene.aspect=width/height;
   drawDecorations();
+  recorder.paint(preview,scene);
 }
 function loop(time) {
   if (!running) return;
   if (time - lastFrame >= 32) { renderMain(); lastFrame = time; }
-  if (time - lastThumbnails >= 240) { renderThumbnails(); lastThumbnails = time; }
-  if (scene.nodes.some(n=>n.follow)) tracker.step(video, settings.mirror, time);
+  if (!recorder.busy && time - lastThumbnails >= 240) { renderThumbnails(); lastThumbnails = time; }
+  if (scene.nodes.some(n=>n.follow)) tracker.step(video, settings.mirror, time, ASPECTS[settings.aspect]);
   animation = requestAnimationFrame(loop);
 }
 async function refreshDevices() {
@@ -195,6 +227,7 @@ function releaseStream() {
   tracker.reset();
 }
 function stopCamera() {
+  recorder.stop();
   cameraRequest++;
   connecting = false;
   if (captureTask) captureTask.cancelled = true;
@@ -220,7 +253,7 @@ async function startCamera(deviceId = '') {
     if (request !== cameraRequest) return;
     if (!authorized) throw new DOMException('Camera permission denied', 'NotAllowedError');
     stream = await navigator.mediaDevices.getUserMedia({
-      video: { width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 30, max: 30 }, ...(deviceId ? { deviceId: { exact: deviceId } } : {}) },
+      video: { width: { ideal: settings.size===3840?3840:1920 }, height: { ideal: settings.size===3840?2160:1080 }, frameRate: { ideal: 30, max: 30 }, ...(deviceId ? { deviceId: { exact: deviceId } } : {}) },
       audio: false
     });
     if (request !== cameraRequest) { stream.getTracks().forEach((t) => t.stop()); return; }
@@ -236,7 +269,7 @@ async function startCamera(deviceId = '') {
     }, { once: true });
     $('welcome').hidden = true;
     $('cameraSettings').hidden = true;
-    const [w, h] = resolution(); $('resolutionLabel').textContent = w + ' × ' + h + ' · 本地保存';
+    updateResolutionLabel();resizeViewfinder();
     setCameraStatus('正在取景', true);
     if (!basicMode) $('effectsPreviewNote').textContent = '实时预览 · 点击试试不同的自己';
     renderMain(); renderThumbnails(); animation = requestAnimationFrame(loop);
@@ -317,6 +350,7 @@ function makeStrip(frames) {
   return strip;
 }
 async function savePending() {
+  if(recorder.pending){await recorder.retry();return;}
   if (!pendingPhoto) return;
   $('toastRetry').disabled = true;
   try {
@@ -328,7 +362,16 @@ async function savePending() {
   } finally { $('toastRetry').disabled = false; updateControls(); }
 }
 async function capture() {
+  if(['recording','paused'].includes(recorder.state)){recorder.stop();return;}
+  if(recorder.busy||recorder.pending)return;
   if (!running || captureTask || pendingPhoto || !galleryAvailable || document.querySelector('dialog[open]')) return;
+  if(settings.mode==='video'){
+    const [width,height]=resolution();
+    await recorder.start({width,height,microphone:$('recordAudio').checked,
+      metadata:{effect:EFFECTS[settings.effect].name,stickers:scene.nodes.map(n=>stickerById(n.stickerId).name),frame:scene.frame==='none'?'':FRAMES.find(f=>f.id===scene.frame).name},
+      paint:(context,w,h)=>{context.drawImage(preview,0,0,w,h);scene.draw(context,w,h,false);}});
+    return;
+  }
   const task = { cancelled: false }; captureTask = task;
   updateControls(); $('cancelCapture').hidden = false;
   const count = settings.mode === 'strip' ? 4 : 1;
@@ -366,12 +409,12 @@ function photoDate(photo, withTime = false) {
 function createPhotoButton(photo, album = false) {
   const button = document.createElement('button'); button.className = album ? 'album-photo' : 'recent-photo';
   button.dataset.mode = photo.mode; button.dataset.photoId = photo.id;
-  button.setAttribute('aria-label', '查看' + photo.effect + '照片，' + photoDate(photo, true));
+  button.setAttribute('aria-label', '查看' + photo.effect + (photo.kind==='video'?'视频，':'照片，') + photoDate(photo, true));
   const img = document.createElement('img'); img.src = photo.thumbnail; img.alt = photo.effect; img.loading = 'lazy';
-  img.addEventListener('error', () => { if (img.src !== photo.url) img.src = photo.url; }, { once: true });
+  img.addEventListener('error', () => { if (photo.kind!=='video' && img.src !== photo.url) img.src = photo.url; }, { once: true });
   button.append(img);
   if (album) {
-    const title = document.createElement('p'); title.textContent = photo.effect + (photo.mode === 'strip' ? ' · 四连拍' : '') + (photo.stickers?.length ? ' · 贴纸' : '');
+    const title = document.createElement('p'); title.textContent = photo.effect + (photo.kind==='video'?' · 视频 '+formatTime(photo.duration):photo.mode === 'strip' ? ' · 四连拍' : '') + (photo.stickers?.length ? ' · 贴纸' : '');
     const date = document.createElement('small'); date.textContent = photoDate(photo, true) + '  /  ' + photo.width + ' × ' + photo.height;
     button.append(title, date);
   } else {
@@ -403,8 +446,12 @@ async function loadGallery() {
 function showPhoto(id) {
   const photo = photos.find((p) => p.id === id); if (!photo) return;
   selectedPhotoId = id;
-  $('fullPhoto').src = photo.url;
-  $('photoInfo').textContent = photo.effect + (photo.stickers?.length ? ' · '+photo.stickers.length+' 张贴纸' : '') + (photo.frame ? ' · '+photo.frame : '') + '  ·  ' + photoDate(photo, true) + '  ·  ' + photo.width + ' × ' + photo.height;
+  $('fullVideo').pause();$('fullVideo').removeAttribute('src');$('fullVideo').load();
+  $('fullVideo').hidden=photo.kind!=='video';$('fullPhoto').hidden=photo.kind==='video';
+  if(photo.kind==='video'){$('fullVideo').src=photo.url;$('fullVideo').poster=photo.thumbnail;}
+  else $('fullPhoto').src=photo.url;
+  $('deleteConfirmation').querySelector('p').textContent='将这'+(photo.kind==='video'?'段视频':'张照片')+'移到'+(isMac?'废纸篓':'回收站')+'？';
+  $('photoInfo').textContent = photo.effect + (photo.stickers?.length ? ' · '+photo.stickers.length+' 张贴纸' : '') + (photo.frame ? ' · '+photo.frame : '') + '  ·  ' + photoDate(photo, true) + '  ·  ' + photo.width + ' × ' + photo.height + (photo.kind==='video'?' · '+formatTime(photo.duration)+(photo.audio?' · 有声':' · 无声'):'');
   $('deleteConfirmation').hidden = true;
   $('previousPhoto').disabled = photos.indexOf(photo) === 0;
   $('nextPhoto').disabled = photos.indexOf(photo) === photos.length - 1;
@@ -422,6 +469,12 @@ $('startCamera').addEventListener('click', () => startCamera($('cameraSelect').v
 $('powerButton').addEventListener('click', stopCamera);
 $('cameraSelect').addEventListener('change', () => { if (running) startCamera($('cameraSelect').value); });
 $('shutter').addEventListener('click', capture);
+$('pauseRecording').addEventListener('click',()=>recorder.pause());
+$('aspectSelect').value=settings.aspect;$('sizeSelect').value=String(settings.size);
+$('aspectSelect').addEventListener('change',()=>{settings.aspect=$('aspectSelect').value;tracker.reset();persist();resizeViewfinder();updateControls();if(running)renderMain();});
+$('sizeSelect').addEventListener('change',()=>{const previous=settings.size;settings.size=Number($('sizeSelect').value);persist();updateControls();if(running){if((previous===3840)!==(settings.size===3840))startCamera($('cameraSelect').value);else renderMain();}});
+function toggleFocus(force){const on=typeof force==='boolean'?force:!document.body.classList.contains('focus-mode');document.body.classList.toggle('focus-mode',on);$('focusButton').setAttribute('aria-pressed',String(on));$('focusButton').textContent=on?'⛶ 返回素材':'⛶ 大取景';}
+$('focusButton').addEventListener('click',()=>toggleFocus());
 $('cancelCapture').addEventListener('click', () => { if (captureTask) captureTask.cancelled = true; });
 $('toastRetry').addEventListener('click', savePending);
 $('intensity').value = settings.intensity;
@@ -434,7 +487,7 @@ $('timerSelect').value = settings.timer;
 $('timerSelect').addEventListener('change', (e) => { settings.timer = Number(e.target.value); persist(); });
 $('mirrorButton').addEventListener('click', () => { settings.mirror = !settings.mirror; tracker.reset(); persist(); updateControls(); renderThumbnails(); if (running) renderMain(); });
 $('gridButton').addEventListener('click', () => { settings.grid = !settings.grid; persist(); updateControls(); });
-document.querySelectorAll('.mode-button').forEach((button) => button.addEventListener('click', () => { settings.mode = button.dataset.mode; persist(); updateControls(); }));
+document.querySelectorAll('.mode-button').forEach((button) => button.addEventListener('click', () => { settings.mode = button.dataset.mode;if(settings.mode!=='single'&&settings.size>1920){settings.size=1920;$('sizeSelect').value='1920';}persist();updateControls(); }));
 document.querySelectorAll('[data-category]').forEach((button) => button.addEventListener('click', () => {
   category = button.dataset.category;
   document.querySelectorAll('[data-category]').forEach((b) => { b.classList.toggle('active', b === button); b.setAttribute('aria-pressed', String(b === button)); });
@@ -457,7 +510,7 @@ $('showPhoto').addEventListener('click', () => safeAction(() => api.showPhoto(se
 $('exportPhoto').addEventListener('click', async () => {
   $('exportPhoto').disabled = true;
   const exported = await safeAction(() => api.exportPhoto(selectedPhotoId));
-  if (exported) toast('照片已另存。');
+  if (exported) toast('作品已另存。');
   $('exportPhoto').disabled = false;
 });
 $('deletePhoto').addEventListener('click', () => { $('deleteConfirmation').hidden = false; $('cancelDelete').focus(); });
@@ -477,16 +530,21 @@ $('confirmDelete').addEventListener('click', async () => {
   }
   $('confirmDelete').disabled = false;
 });
+$('photoDialog').addEventListener('close',()=>{$('fullVideo').pause();$('fullVideo').removeAttribute('src');$('fullVideo').load();});
+$('helpMicrophoneSettings').addEventListener('click',()=>safeAction(()=>api.openMicrophoneSettings()));
 $('photoDialog').addEventListener('cancel', (event) => {
   if (!$('deleteConfirmation').hidden) { event.preventDefault(); $('deleteConfirmation').hidden = true; }
 });
 document.addEventListener('keydown', (event) => {
+  if(event.key==='Escape' && ['recording','paused'].includes(recorder.state)){recorder.stop();event.preventDefault();return;}
+  if(event.key==='Escape'&&!document.querySelector('dialog[open]'))toggleFocus(false);
   if (event.key === 'Escape' && captureTask) { captureTask.cancelled = true; event.preventDefault(); return; }
   if (event.repeat || /INPUT|SELECT|TEXTAREA/.test(event.target.tagName)) return;
-  if (!document.querySelector('dialog[open]') && !captureTask && panel === 'stickers') {
+  if (!document.querySelector('dialog[open]') && !captureTask && !recorder.busy && panel === 'stickers') {
     if (event.key === 'Delete' && scene.current) { event.preventDefault(); scene.remove(); return; }
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') { event.preventDefault(); scene.undo(); return; }
   }
+  if(event.key.toLowerCase()==='f'&&!document.querySelector('dialog[open]')){event.preventDefault();toggleFocus();}
   if (event.code === 'Space' && running && !document.querySelector('dialog[open]')) { event.preventDefault(); capture(); }
   if ($('photoDialog').open && $('deleteConfirmation').hidden) {
     if (event.key === 'ArrowLeft') movePhoto(-1);
@@ -494,16 +552,16 @@ document.addEventListener('keydown', (event) => {
   }
 });
 window.addEventListener('beforeunload', (event) => {
-  if (pendingPhoto || captureTask) { event.preventDefault(); event.returnValue = false; }
+  if (pendingPhoto || captureTask || recorder.busy || recorder.pending) { event.preventDefault(); event.returnValue = false; }
 });
-window.addEventListener('unload', () => { releaseStream(); tracker.close(); });
-document.addEventListener('visibilitychange', () => { if (document.hidden && captureTask) captureTask.cancelled = true; });
+window.addEventListener('unload', () => { releaseStream(); tracker.close(); recorder.cleanup(); });
+document.addEventListener('visibilitychange', () => { if(document.hidden && recorder.state==='recording'){recorder.pause();toast('窗口隐藏，录像已暂停。回来后可继续。');} if (document.hidden && captureTask) captureTask.cancelled = true; });
 navigator.mediaDevices?.addEventListener('devicechange', refreshDevices);
 document.querySelector('.brand').addEventListener('click', (event) => event.preventDefault());
 // Keep the composition guides over the image, excluding any letterboxing.
-new ResizeObserver(() => {
+function resizeViewfinder() {
   const width = $('viewfinder').clientWidth, height = $('viewfinder').clientHeight;
-  const displayedWidth = Math.min(width, height * 4/3), displayedHeight = displayedWidth * 3/4;
+  const displayedWidth = Math.min(width, height * ASPECTS[settings.aspect]), displayedHeight = displayedWidth / ASPECTS[settings.aspect];
   $('gridOverlay').style.left = (width-displayedWidth)/2 + 'px';
   $('gridOverlay').style.right = (width-displayedWidth)/2 + 'px';
   $('gridOverlay').style.top = (height-displayedHeight)/2 + 'px';
@@ -512,7 +570,8 @@ new ResizeObserver(() => {
   decorationCanvas.style.height = displayedHeight + 'px';
   decorationCanvas.style.left = (width-displayedWidth)/2 + 'px';
   decorationCanvas.style.top = (height-displayedHeight)/2 + 'px';
-}).observe($('viewfinder'));
+}
+new ResizeObserver(resizeViewfinder).observe($('viewfinder'));
 
 function drawDecorations() {
   if (!running) return;
@@ -520,7 +579,7 @@ function drawDecorations() {
     decorationCanvas.width = preview.width; decorationCanvas.height = preview.height;
   }
   decorationContext.clearRect(0,0,decorationCanvas.width,decorationCanvas.height);
-  scene.draw(decorationContext,decorationCanvas.width,decorationCanvas.height,panel === 'stickers' && !captureTask);
+  scene.draw(decorationContext,decorationCanvas.width,decorationCanvas.height,panel === 'stickers' && !captureTask && !recorder.busy);
 }
 function updateFaceStatus() {
   $('faceStatus').title = tracker.lastError || '';
@@ -532,8 +591,8 @@ function updateFaceStatus() {
     '正在寻找人脸 · 贴纸暂固定，可拖动改为手动';
 }
 function updateDecorControls() {
-  const busy=!!captureTask,n=scene.current;
-  for(const id of ['randomLook','resetLook','undoSticker','clearStickers','removeSticker','stickerSize','stickerRotation','followFace','duplicateSticker','frontSticker'])$(id).disabled=busy;
+  const busy=!!captureTask||recorder.busy,n=scene.current;
+  for(const id of ['anchorSelect','stickerOffsetX','stickerOffsetY','lookSelect','randomLook','resetLook','undoSticker','clearStickers','removeSticker','stickerSize','stickerRotation','followFace','duplicateSticker','frontSticker'])$(id).disabled=busy;
   $('undoSticker').disabled=busy||!scene.history.length;
   $('clearStickers').disabled=busy||!scene.nodes.length;
   $('placedCount').textContent=scene.nodes.length;
@@ -547,6 +606,8 @@ function updateDecorControls() {
     $('stickerRotation').value=Math.round(n.rotation*180/Math.PI);
     $('stickerRotationValue').textContent=$('stickerRotation').value+'°';
     $('followFace').checked=n.follow;
+    $('anchorSelect').value=n.anchor||'default';$('anchorSelect').disabled=busy||!n.follow;
+    for(const axis of ['X','Y']){const el=$('stickerOffset'+axis);el.disabled=busy||!n.follow;el.value=Math.round((n['offset'+axis]||0)*100);$('stickerOffset'+axis+'Value').textContent=el.value;}
   }
   $('selectedFrameName').textContent='当前：'+FRAMES.find(f=>f.id===scene.frame).name;
   document.querySelectorAll('.sticker-card').forEach(button=>{
@@ -578,7 +639,7 @@ function buildStickers() {
     const count=document.createElement('b');count.className='sticker-count';
     button.append(canvas,label,count);
     if(def.anchor){const badge=document.createElement('i');badge.textContent='跟随';button.append(badge);}
-    button.addEventListener('click',()=>{if(captureTask)return;if(!scene.add(def.id))toast('最多同时叠加 20 张贴纸，先移除一张再试。');});
+    button.addEventListener('click',()=>{if(captureTask||recorder.busy)return;if(!scene.add(def.id))toast('最多同时叠加 20 张贴纸，先移除一张再试。');});
     $('stickerGrid').append(button);
   }
   updateDecorControls();updateCatalogEmpty();
@@ -592,7 +653,7 @@ function buildFrames() {
     const canvas=document.createElement('canvas');canvas.width=240;canvas.height=180;
     const c=canvas.getContext('2d');c.drawImage(sample,0,0,240,180);drawFrame(c,frame.id,240,180);
     const label=document.createElement('span');label.textContent=frame.name;button.append(canvas,label);
-    button.addEventListener('click',()=>{if(!captureTask)scene.setFrame(frame.id);});
+    button.addEventListener('click',()=>{if(!captureTask&&!recorder.busy)scene.setFrame(frame.id);});
     $('frameGrid').append(button);
   }
   updateDecorControls();updateCatalogEmpty();
@@ -616,55 +677,72 @@ for(const [id,name] of STICKER_CATEGORIES){
     buildStickers();
   });$('stickerTabs').append(button);
 }
-$('stickerSize').addEventListener('input',()=>{if(!captureTask&&scene.current)scene.update(scene.current.follow?{scale:Number($('stickerSize').value)/100}:{width:Number($('stickerSize').value)/100});});
-$('stickerRotation').addEventListener('input',()=>{if(!captureTask)scene.update({rotation:Number($('stickerRotation').value)*Math.PI/180});});
+$('stickerSize').addEventListener('input',()=>{if(!captureTask&&!recorder.busy&&scene.current)scene.update(scene.current.follow?{scale:Number($('stickerSize').value)/100}:{width:Number($('stickerSize').value)/100});});
+$('stickerRotation').addEventListener('input',()=>{if(!captureTask&&!recorder.busy)scene.update({rotation:Number($('stickerRotation').value)*Math.PI/180});});
+for(const [id,name] of ANCHORS)$('anchorSelect').add(new Option(name,id));
+$('anchorSelect').addEventListener('change',()=>{if(!captureTask&&!recorder.busy)scene.update({anchor:$('anchorSelect').value,offsetX:0,offsetY:0});});
+for(const axis of ['X','Y'])$('stickerOffset'+axis).addEventListener('input',()=>{if(!captureTask&&!recorder.busy)scene.update({['offset'+axis]:Number($('stickerOffset'+axis).value)/100});});
 $('followFace').addEventListener('change',()=>{
-  if(captureTask||!scene.current)return;
+  if(captureTask||recorder.busy||!scene.current)return;
   const follow=$('followFace').checked,p=scene.placement(scene.current);
-  scene.update(follow?{follow:true,scale:1,rotation:0}:{follow:false,x:p.x,y:p.y,width:Math.min(.95,p.width),rotation:p.rotation});
+  scene.update(follow?{follow:true,scale:1,rotation:0,offsetX:0,offsetY:0}:{follow:false,x:p.x,y:p.y,width:Math.min(.95,p.width),rotation:p.rotation});
 });
-for(const [id,method] of [['removeSticker','remove'],['clearStickers','clear'],['undoSticker','undo'],['duplicateSticker','duplicate'],['frontSticker','bringToFront']])$(id).addEventListener('click',()=>{if(!captureTask)scene[method]();});
+for(const [id,method] of [['removeSticker','remove'],['clearStickers','clear'],['undoSticker','undo'],['duplicateSticker','duplicate'],['frontSticker','bringToFront']])$(id).addEventListener('click',()=>{if(!captureTask&&!recorder.busy)scene[method]();});
 $('resetLook').addEventListener('click',()=>{
-  if(captureTask)return;
+  if(captureTask||recorder.busy)return;
   scene.remember();scene.nodes=[];scene.frame='none';scene.selected=null;scene.changed();
   settings.effect=0;settings.intensity=75;$('intensity').value=75;persist();updateControls();renderThumbnails();if(running)renderMain();
   toast('已恢复原片，可以重新搭配啦。');
 });
 const looks=[
-  {effect:19,frame:'candy',stickers:['bunny','blush','food-7']},
-  {effect:21,frame:'stars',stickers:['unicorn','magic-4','magic-8']},
-  {effect:20,frame:'jungle',stickers:['frog','nature-0','nature-10']},
-  {effect:3,frame:'birthday',stickers:['partyhat','stars','party-0','food-9']},
-  {effect:4,frame:'space',stickers:['astronaut','toys-0','toys-1']},
-  {effect:18,frame:'rainbow',stickers:['rainbowglasses','magic-0','magic-5']},
-  {effect:27,frame:'garden',stickers:['cat','whiskers','nature-9']},
-  {effect:10,frame:'comic',stickers:['crown','sunglasses','party-4']},
-  {effect:22,frame:'candy',stickers:['bear','food-5','food-6']},
-  {effect:6,frame:'winter',stickers:['antlers','party-8','party-9']},
-  {effect:23,frame:'ocean',stickers:['hearts','nature-4','nature-6']},
-  {effect:35,frame:'arcade',stickers:['googly','toys-6','toys-10']}
+  ['软萌小兔',19,'candy',['bunny','prop-accessories-bunnyteeth','blush']],
+  ['森林小狐狸',48,'botanical',['prop-animals-fox','prop-accessories-catnose','whiskers']],
+  ['熊猫团子',6,'garden',['prop-animals-panda','prop-paint-paw']],
+  ['奶油小熊',48,'scrapbook',['bear','prop-accessories-bowtie']],
+  ['小小宇航员',4,'space',['astronaut','prop-paint-stars']],
+  ['彩虹独角兽',18,'rainbow',['unicorn','prop-paint-rainbow']],
+  ['魔法学校',21,'stars',['prop-hats-wizard','prop-eyewear-round','prop-magic-gem']],
+  ['水晶公主',50,'butterflies',['prop-magic-tiara','prop-accessories-earrings']],
+  ['小美人鱼',23,'ocean',['prop-magic-mermaid','prop-paint-galaxy','prop-accessories-necklace']],
+  ['青蛙王子',20,'jungle',['frog','prop-accessories-bowtie']],
+  ['酷酷飞行员',49,'film',['prop-eyewear-aviator','prop-accessories-scarf']],
+  ['消防小英雄',22,'comic',['prop-hats-firefighter','prop-paint-lightning']],
+  ['大厨开饭啦',48,'cherry',['prop-hats-chef','prop-accessories-french']],
+  ['生日快乐',3,'birthday',['partyhat','prop-paint-confetti','prop-eyewear-flower']],
+  ['雪国精灵',51,'winter',['prop-magic-icehorns','prop-paint-snow','prop-magic-elfears']],
+  ['喵星来客',27,'garden',['cat','whiskers','prop-paint-cat']],
+  ['老虎探险队',22,'jungle',['prop-animals-tiger','prop-paint-tiger','prop-accessories-catnose']],
+  ['未来小队',58,'neon',['prop-magic-robot','prop-eyewear-visor']],
+  ['月亮仙子',59,'festival',['prop-magic-moon','prop-paint-galaxy','prop-accessories-earrings']],
+  ['小天使',54,'clouds',['prop-magic-halo','prop-magic-wings']],
+  ['毕业啦',53,'chalk',['prop-hats-graduate','prop-eyewear-round']],
+  ['潜水小队',23,'bubbles',['prop-eyewear-dive','prop-paint-tears']],
+  ['派对DJ',7,'arcade',['prop-accessories-headphone','prop-eyewear-pixel']],
+  ['圣诞爷爷',48,'winter',['prop-hats-santa','prop-accessories-santabeard','prop-eyewear-round']]
 ];
-$('randomLook').addEventListener('click',()=>{
-  if(captureTask)return;
-  const options=looks.filter(l=>!basicMode||EFFECTS[l.effect].css);
-  const look=options[Math.floor(Math.random()*options.length)];
+looks.forEach(([name],i)=>$('lookSelect').add(new Option(name,String(i))));
+function applyLook(index){
+  if(captureTask||recorder.busy)return;
+  const [name,effect,frame,stickers]=looks[index];
+  if(basicMode&&!EFFECTS[effect].css){toast('兼容模式下将保留配饰与相框。');}
   const previous=scene.snapshot(),history=scene.history.slice();
-  scene.nodes=[];scene.frame=look.frame;
-  look.stickers.forEach((id,index)=>{const node=scene.add(id);if(!stickerById(id).anchor){node.x=index%2?.85:.14;node.y=.76+(index%2)*.08;node.width=.17;}});
+  scene.nodes=[];scene.frame=frame;stickers.forEach(id=>scene.add(id));
   scene.selected=null;scene.history=[...history,previous].slice(-30);scene.changed();
-  settings.effect=look.effect;settings.intensity=85;$('intensity').value=85;persist();updateControls();
-  renderThumbnails();if(running)renderMain();toast('新造型准备好啦！贴纸可以继续自由搭配。');
-});
+  settings.effect=basicMode&&!EFFECTS[effect].css?0:effect;settings.intensity=85;$('intensity').value=85;
+  $('lookSelect').value=String(index);persist();updateControls();renderThumbnails();if(running)renderMain();toast(name+'已准备好，配饰可以继续微调。');
+}
+$('lookSelect').addEventListener('change',()=>{if($('lookSelect').value!=='')applyLook(Number($('lookSelect').value));});
+$('randomLook').addEventListener('click',()=>applyLook(Math.floor(Math.random()*looks.length)));
 const point=(event)=>{const r=decorationCanvas.getBoundingClientRect();return {x:(event.clientX-r.left)/r.width,y:(event.clientY-r.top)/r.height};};
 decorationCanvas.addEventListener('pointerdown',(event)=>{
-  if(!running||captureTask||event.button!==0)return;
+  if(!running||captureTask||recorder.busy||event.button!==0)return;
   const start=point(event),node=scene.hit(start.x,start.y);
   scene.selected=node?.uid||null;
   if(node){const placement=scene.placement(node);drag={start,node,placement,moved:false};decorationCanvas.setPointerCapture(event.pointerId);if(panel!=='stickers')switchPanel('stickers');}
   updateDecorControls();drawDecorations();
 });
 decorationCanvas.addEventListener('pointermove',(event)=>{
-  if(!drag||captureTask)return;
+  if(!drag||captureTask||recorder.busy)return;
   const now=point(event),dx=now.x-drag.start.x,dy=now.y-drag.start.y;
   if(!drag.moved&&Math.hypot(dx,dy)<.008)return;
   if(!drag.moved){scene.remember();drag.moved=true;}

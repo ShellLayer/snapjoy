@@ -46,7 +46,19 @@ export const EFFECTS = [
   { id: 44, name: '大头娃娃', en: 'Big head', category: 'fun', description: '脸放在上半部，试试大头小身体。' },
   { id: 45, name: '小头外星人', en: 'Tiny head', category: 'fun', description: '脸放在上半部，变个小脑袋。' },
   { id: 46, name: '胖胖圆圆', en: 'Squishy', category: 'fun', description: '整个画面横向鼓起来，圆圆软软。' },
-  { id: 47, name: '高个子精灵', en: 'Tall elf', category: 'fun', description: '画面拉得高高的，变身小精灵。' }
+  { id: 47, name: '高个子精灵', en: 'Tall elf', category: 'fun', description: '画面拉得高高的，变身小精灵。' },
+  {"id": 48, "name": "蜂蜜奶油", "en": "Honey", "category": "style", "description": "暖蜂蜜高光与柔和阴影。", "css": "sepia(.3) brightness(1.15)"},
+  {"id": 49, "name": "青橙电影", "en": "Cinema", "category": "style", "description": "青色阴影与橙色高光。", "css": "contrast(1.15) saturate(1.2)"},
+  {"id": 50, "name": "樱花午后", "en": "Sakura", "category": "style", "description": "温柔的粉色和明亮的春日感。", "css": "saturate(.75) brightness(1.15)"},
+  {"id": 51, "name": "冰蓝童话", "en": "Ice", "category": "style", "description": "冰蓝色的通透小世界。", "css": "hue-rotate(180deg) saturate(.6)"},
+  {"id": 52, "name": "巧克力片", "en": "Cocoa", "category": "style", "description": "温暖巧克力色的老电影。", "css": "sepia(.8) contrast(1.12)"},
+  {"id": 53, "name": "月光银盐", "en": "Silver", "category": "style", "description": "冷调的银色黑白照片。", "css": "grayscale(1) contrast(.85)"},
+  {"id": 54, "name": "梦幻柔光", "en": "Dream", "category": "style", "description": "明亮的柔光和轻轻的晕影。", "css": "brightness(1.2) contrast(.75)"},
+  {"id": 55, "name": "糖果双色", "en": "Duotone", "category": "art", "description": "粉色与蓝色拼成糖果海报。"},
+  {"id": 56, "name": "彩色速写", "en": "Color sketch", "category": "art", "description": "用彩色线条勾勒小小艺术家。"},
+  {"id": 57, "name": "铬金属", "en": "Chrome", "category": "art", "description": "银蓝金属的闪亮光泽。"},
+  {"id": 58, "name": "彩虹光斑", "en": "Prism", "category": "art", "description": "让边缘散开一点彩虹光。"},
+  {"id": 59, "name": "星河闪闪", "en": "Stardust", "category": "art", "description": "轻轻闪烁的星点，适合录小视频。"}
 ];
 
 const vertexSource = [
@@ -64,20 +76,21 @@ const fragmentSource = [
   'uniform float u_strength;',
   'uniform int u_effect;',
   'uniform float u_time;',
+  'uniform float u_aspect;',
   'vec3 sampleAt(vec2 uv){uv.x=mix(uv.x,1.-uv.x,u_mirror);return texture2D(u_image,(clamp(uv,0.,1.)-.5)*u_crop+.5).rgb;}',
   'float lum(vec3 c){return dot(c,vec3(.299,.587,.114));}',
   'float random(vec2 p){return fract(sin(dot(p,vec2(12.9898,78.233)))*43758.5453);}',
   'vec3 rainbow(float t){return .5+.5*cos(6.28318*(t+vec3(0.,.333,.667)));}',
   'void main(){',
   'vec2 uv=v_uv; vec2 q=uv; float s=u_strength;',
-  'vec2 p=(uv-.5)*2.;p.x*=1.333333;float r=length(p);',
+  'vec2 p=(uv-.5)*2.;p.x*=u_aspect;float r=length(p);',
   'if(u_effect==11){float cells=mix(150.,32.,s);q=mix(uv,(floor(uv*vec2(cells,cells*.75))+.5)/vec2(cells,cells*.75),s);}',
-  'if(u_effect==12){p*=1.-.62*s*(1.-smoothstep(0.,1.3,r));q=p/vec2(2.666666,2.)+.5;}',
-  'if(u_effect==13){p.x*=1.-.66*s*exp(-3.*p.y*p.y);p.y*=1.+.16*s;q=p/vec2(2.666666,2.)+.5;}',
-  'if(u_effect==14){p*=1.+1.3*s*(1.-smoothstep(0.,1.1,r));q=p/vec2(2.666666,2.)+.5;}',
-  'if(u_effect==15){float a=3.6*s*pow(max(0.,1.-r/1.3),2.);p=mat2(cos(a),-sin(a),sin(a),cos(a))*p;q=p/vec2(2.666666,2.)+.5;}',
+  'if(u_effect==12){p*=1.-.62*s*(1.-smoothstep(0.,1.3,r));q=p/vec2(2.*u_aspect,2.)+.5;}',
+  'if(u_effect==13){p.x*=1.-.66*s*exp(-3.*p.y*p.y);p.y*=1.+.16*s;q=p/vec2(2.*u_aspect,2.)+.5;}',
+  'if(u_effect==14){p*=1.+1.3*s*(1.-smoothstep(0.,1.1,r));q=p/vec2(2.*u_aspect,2.)+.5;}',
+  'if(u_effect==15){float a=3.6*s*pow(max(0.,1.-r/1.3),2.);p=mat2(cos(a),-sin(a),sin(a),cos(a))*p;q=p/vec2(2.*u_aspect,2.)+.5;}',
   'if(u_effect==16){q.x=mix(uv.x,abs(uv.x-.5)+.5,s);}',
-  'if(u_effect==17){float a=atan(p.y,p.x);float sector=1.04719755;a=abs(mod(a,sector)-sector*.5);vec2 kp=vec2(cos(a),sin(a))*r;q=mix(uv,kp/vec2(2.666666,2.)+.5,s);}',
+  'if(u_effect==17){float a=atan(p.y,p.x);float sector=1.04719755;a=abs(mod(a,sector)-sector*.5);vec2 kp=vec2(cos(a),sin(a))*r;q=mix(uv,kp/vec2(2.*u_aspect,2.)+.5,s);}',
   'if(u_effect==23){q.x+=sin(uv.y*24.+u_time)*.008*s;}',
   'if(u_effect==29){q=mix(uv,fract(uv*2.),s);}',
   'if(u_effect==33){vec2 cells=vec2(40.,30.);q=mix(uv,(floor(uv*cells)+.5)/cells,s);}',
@@ -90,7 +103,7 @@ const fragmentSource = [
   'if(u_effect==41){q.y=mix(uv.y,abs(uv.y-.5)+.5,s);}',
   'if(u_effect==42){q.y=mix(uv.y,1.-uv.y,s);}',
   'if(u_effect==43){vec2 tile=abs(fract((uv-.5)*3.+.5)*2.-1.);q=mix(uv,tile,s);}',
-  'if(u_effect==44 || u_effect==45){vec2 center=vec2(.5,.66);vec2 d=(uv-center)*vec2(1.3333,1.);float fall=1.-smoothstep(0.,.43,length(d));float amt=u_effect==44?-.65:.9;q=center+(uv-center)*(1.+amt*s*fall);}',
+  'if(u_effect==44 || u_effect==45){vec2 center=vec2(.5,.66);vec2 d=(uv-center)*vec2(u_aspect,1.);float fall=1.-smoothstep(0.,.43,length(d));float amt=u_effect==44?-.65:.9;q=center+(uv-center)*(1.+amt*s*fall);}',
   'if(u_effect==46){q.x=.5+(uv.x-.5)*(1.-.45*s);}',
   'if(u_effect==47){q.y=.5+(uv.y-.5)*(1.-.45*s);}',
   'vec3 c=sampleAt(q);vec3 outColor=c;float y=lum(c);',
@@ -132,6 +145,19 @@ const fragmentSource = [
   'else{outColor=floor(c*5.+.5)/5.;outColor=mix(outColor,vec3(.08,.09,.10),smoothstep(.18,.5,edge));}',
   '}',
   'if((u_effect>0 && u_effect<11) || (u_effect>=18 && u_effect<=35))outColor=mix(c,outColor,s);',
+  "if(u_effect==48){outColor=c*vec3(1.08,1.03,.91)+vec3(.08,.055,.02);}",
+  "if(u_effect==49){outColor=mix(c*vec3(.71,1.12,1.18),c*vec3(1.21,1.03,.78),smoothstep(.1,.85,y));outColor=(outColor-.5)*1.1+.5;}",
+  "if(u_effect==50){outColor=c*.85+vec3(.16,.095,.12);}",
+  "if(u_effect==51){outColor=mix(vec3(y),c,.58)*vec3(.87,1.03,1.17)+.045;}",
+  "if(u_effect==52){outColor=vec3(y)*vec3(1.06,.84,.69);outColor=pow(outColor,vec3(.93));}",
+  "if(u_effect==53){outColor=vec3(y*.88+.08)*vec3(.96,1.,1.06);}",
+  "if(u_effect==54){outColor=c*.7+.24;outColor*=1.-.12*smoothstep(.2,.8,length(uv-.5));}",
+  "if(u_effect==55){outColor=mix(vec3(.33,.48,.76),vec3(1.,.73,.78),smoothstep(.08,.92,y));}",
+  "if(u_effect==56){vec2 d=u_texel*2.;float e=length(sampleAt(q+d)-sampleAt(q-d));outColor=mix(vec3(.98,.95,.87),c*.7,clamp(e*5.,0.,1.));}",
+  "if(u_effect==57){outColor=vec3(.58,.7,.84)*(.55+.45*cos(y*18.))+c*.2;}",
+  "if(u_effect==58){float d=.012*length(uv-.5);outColor=vec3(sampleAt(q+vec2(d,0.)).r,c.g,sampleAt(q-vec2(d,0.)).b)+vec3(.03,.01,.04);}",
+  "if(u_effect==59){vec2 tile=floor(uv*vec2(36.,36./u_aspect));vec2 f=fract(uv*vec2(36.,36./u_aspect))-.5;float spark=step(.95,random(tile))*max(0.,1.-length(f)*7.)*(.5+.5*sin(u_time*2.+random(tile)*30.));outColor=c*.94+vec3(.6,.45,.8)*spark;}",
+  'if(u_effect>=48)outColor=mix(c,outColor,s);',
   'gl_FragColor=vec4(clamp(outColor,0.,1.),1.);',
   '}'
 ].join('\n');
@@ -158,7 +184,7 @@ export class EffectRenderer {
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1,1,-1,-1,1,-1,1,1,-1,1,1]), gl.STATIC_DRAW);
     const position = gl.getAttribLocation(program, 'a_position');
     gl.enableVertexAttribArray(position); gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);
-    this.uniforms = Object.fromEntries(['u_crop','u_texel','u_mirror','u_strength','u_effect','u_time'].map((key) => [key, gl.getUniformLocation(program, key)]));
+    this.uniforms = Object.fromEntries(['u_crop','u_texel','u_mirror','u_strength','u_effect','u_time','u_aspect'].map((key) => [key, gl.getUniformLocation(program, key)]));
     const texture = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, texture);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
@@ -171,13 +197,15 @@ export class EffectRenderer {
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source);
     const width = source.videoWidth || source.width;
     const height = source.videoHeight || source.height;
-    const ratio = width / height, target = 4 / 3;
-    gl.uniform2f(this.uniforms.u_crop, ratio > target ? target / ratio : 1, ratio < target ? ratio / target : 1);
+    this.sourceRatio = width / height;
     gl.uniform2f(this.uniforms.u_texel, 1 / width, 1 / height);
   }
   draw(effect, strength, mirror, width = this.canvas.width, height = this.canvas.height, time = 0) {
     const gl = this.gl;
     if (this.canvas.width !== width || this.canvas.height !== height) { this.canvas.width = width; this.canvas.height = height; }
+    const ratio=this.sourceRatio||4/3,target=width/height;
+    gl.uniform2f(this.uniforms.u_crop,ratio>target?target/ratio:1,ratio<target?ratio/target:1);
+    gl.uniform1f(this.uniforms.u_aspect,target);
     gl.viewport(0, 0, width, height);
     gl.uniform1i(this.uniforms.u_effect, effect);
     gl.uniform1f(this.uniforms.u_strength, strength);
@@ -195,7 +223,7 @@ export class BasicRenderer {
     if (this.canvas.width !== width || this.canvas.height !== height) { this.canvas.width = width; this.canvas.height = height; }
     const c = this.context, source = this.source;
     const sw = source.videoWidth || source.width, sh = source.videoHeight || source.height;
-    const ratio = 4 / 3, cw = Math.min(sw, sh * ratio), ch = cw / ratio;
+    const ratio = width / height, cw = Math.min(sw, sh * ratio), ch = cw / ratio;
     c.save();
     if (mirror) { c.translate(width, 0); c.scale(-1, 1); }
     const paint = () => c.drawImage(source, (sw-cw)/2, (sh-ch)/2, cw, ch, 0, 0, width, height);

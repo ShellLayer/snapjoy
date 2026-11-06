@@ -11,7 +11,7 @@ test('macOS has native menus, camera privacy routing and Dock window recreation'
   const app = await electron.launch({ args: [path.resolve(__dirname, '..')], env });
   try {
     const page = await app.firstWindow();
-    await expect(page.locator('.effect-card')).toHaveCount(48);
+    await expect(page.locator('.effect-card')).toHaveCount(60);
     await expect(page.locator('html')).toHaveClass(/platform-mac/);
     await expect(page.locator('.window-actions')).toBeHidden();
     await expect(page.locator('#helpCameraSettings')).toContainText('Mac 隐私设置');
@@ -35,6 +35,13 @@ test('macOS has native menus, camera privacy routing and Dock window recreation'
     await app.evaluate(({ systemPreferences }) => { systemPreferences.getMediaAccessStatus = () => 'granted'; });
     expect(await page.evaluate(() => window.booth.requestCameraAccess())).toBe(true);
     expect(await app.evaluate(() => globalThis.macTest.requests)).toEqual(['camera']);
+    await app.evaluate(({systemPreferences})=>{systemPreferences.getMediaAccessStatus=()=> 'denied';});
+    expect(await page.evaluate(()=>window.booth.requestMicrophoneAccess())).toBe(false);
+    await page.locator('#helpMicrophoneSettings').evaluate(button=>button.click());
+    expect((await app.evaluate(()=>globalThis.macTest.opened)).at(-1)).toBe('x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone');
+    await app.evaluate(({systemPreferences})=>{systemPreferences.getMediaAccessStatus=()=> 'not-determined';});
+    expect(await page.evaluate(()=>window.booth.requestMicrophoneAccess())).toBe(false);
+    expect((await app.evaluate(()=>globalThis.macTest.requests)).at(-1)).toBe('microphone');
     await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].close());
     await expect.poll(() => app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().length)).toBe(0);
     const nextWindow = app.waitForEvent('window');

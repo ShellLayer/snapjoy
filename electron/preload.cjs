@@ -10,5 +10,12 @@ contextBridge.exposeInMainWorld('booth', Object.freeze({
   openFolder: () => ipcRenderer.invoke('photos:folder'),
   openCameraSettings: () => ipcRenderer.invoke('camera:settings'),
   requestCameraAccess: () => ipcRenderer.invoke('camera:authorize'),
+  beginVideo: payload => ipcRenderer.invoke('videos:begin', payload),
+  appendVideo: (id, bytes) => ipcRenderer.invoke('videos:append', id, bytes),
+  finishVideo: payload => ipcRenderer.invoke('videos:finish', payload),
+  abortVideo: id => ipcRenderer.invoke('videos:abort', id),
+  requestMicrophoneAccess: () => ipcRenderer.invoke('microphone:authorize'),
+  releaseMicrophone: () => ipcRenderer.invoke('microphone:release'),
+  openMicrophoneSettings: () => ipcRenderer.invoke('microphone:settings'),
   windowAction: (action) => ipcRenderer.invoke('window:action', action)
 }));

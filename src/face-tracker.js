@@ -1,3 +1,4 @@
+import { cropRect } from './capture-settings.js';
 // All inputs and model files stay on this machine. This locates facial features;
 // it never creates identities or stores biometric templates.
 export function estimateFace(detections,width,height,previous=null) {
@@ -59,14 +60,15 @@ export class FaceTracker {
       this.worker.postMessage({type:'init'});
     }catch(error){this.lastError=String(error.message||error);this.setStatus('error');}
   }
-  async step(video,mirror,now){
+  async step(video,mirror,now,aspect=4/3){
     this.ensure();
     if(this.status!=='ready'||this.busy||now-this.lastSent<140||video.readyState<2||video.currentTime===this.lastVideo)return;
     this.busy=true;this.lastSent=now;this.lastVideo=video.currentTime;
     const generation=this.generation,c=this.context,w=video.videoWidth,h=video.videoHeight;
-    const cw=Math.min(w,h*4/3),ch=cw*3/4;
-    c.save();if(mirror){c.translate(320,0);c.scale(-1,1);}
-    c.drawImage(video,(w-cw)/2,(h-ch)/2,cw,ch,0,0,320,240);c.restore();
+    const crop=cropRect(w,h,aspect),tw=aspect>=1?320:Math.round(320*aspect),th=Math.round(tw/aspect);
+    if(this.canvas.width!==tw||this.canvas.height!==th){this.canvas.width=tw;this.canvas.height=th;}
+    c.save();if(mirror){c.translate(tw,0);c.scale(-1,1);}
+    c.drawImage(video,crop.x,crop.y,crop.width,crop.height,0,0,tw,th);c.restore();
     try{
       const bitmap=await createImageBitmap(this.canvas);
       if(generation!==this.generation||this.status!=='ready'){bitmap.close();this.busy=false;return;}

@@ -14,13 +14,14 @@ async function launch(dataDir, fake = true) {
   });
   const page = await app.firstWindow();
   await page.waitForLoadState('domcontentloaded');
-  await expect(page.locator('.effect-card')).toHaveCount(48);
+  await expect(page.locator('.effect-card')).toHaveCount(60);
   return { app, page };
 }
 async function activate(page) {
   await page.locator('#startCamera').click();
   await expect(page.locator('#cameraStatus')).toHaveText('正在取景');
   await expect(page.locator('#shutter')).toBeEnabled();
+  await page.locator('#aspectSelect').selectOption('4:3');
 }
 async function newDataDir() { return fs.mkdtemp(path.join(os.tmpdir(), 'lumi-test-')); }
 async function immediate(page) { await page.locator('#timerSelect').selectOption('0'); }
@@ -58,7 +59,7 @@ test('camera, every effect, true PNG capture, mirror, local persistence and priv
       let difference=0; for(let y=0;y<180;y++)for(let x=0;x<240;x++)for(let ch=0;ch<3;ch++)difference+=Math.abs(original[(y*240+x)*4+ch]-mirrorPixels[(y*240+239-x)*4+ch]);
       return { hashes, mirrorError: difference/(240*180*3) };
     });
-    expect(new Set(effectResults.hashes.map((h) => h.hash)).size).toBe(48);
+    expect(new Set(effectResults.hashes.map((h) => h.hash)).size).toBe(60);
     expect(effectResults.hashes.every((h) => h.light > 240*180*255)).toBeTruthy();
     expect(effectResults.mirrorError).toBeLessThan(.2);
     await page.getByRole('button', { name: '黑白故事', exact:true }).click();
@@ -206,7 +207,7 @@ test('storage failure preserves an unsaved photo for retry; invalid payloads rej
     }, exportPath);
     await page.locator('.recent-photo').click();
     await page.locator('#exportPhoto').click();
-    await expect(page.locator('#toastText')).toHaveText('照片已另存。');
+    await expect(page.locator('#toastText')).toHaveText('作品已另存。');
     expect(await fs.readFile(exportPath)).toEqual(await fs.readFile(path.join(dataDir,'photos',original.id+'.png')));
   } finally { await app.close(); }
 });

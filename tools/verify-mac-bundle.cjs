@@ -11,13 +11,15 @@ const { packageArch } = require('./test-graphics.cjs');
   const plist = path.join(appPath, 'Contents', 'Info.plist');
   const read = key => execFileSync('/usr/libexec/PlistBuddy', ['-c', 'Print :' + key, plist], { encoding: 'utf8' }).trim();
   const version = read('CFBundleShortVersionString');
+  const microphoneDescription = read('NSMicrophoneUsageDescription');
+  if(!microphoneDescription.includes('录制声音'))throw new Error('Microphone usage description missing');
   const cameraDescription = read('NSCameraUsageDescription');
   if (version !== config.version || !cameraDescription.includes('摄像头')) throw new Error('Bundle metadata incomplete');
   if (read('LSMinimumSystemVersion') !== '13.0') throw new Error('Unexpected minimum macOS version');
   execFileSync('/usr/bin/codesign', ['--verify', '--deep', '--strict', '--verbose=2', appPath]);
   const architecture = execFileSync('/usr/bin/lipo', ['-archs', path.join(appPath, 'Contents', 'MacOS', '拾光相机')], { encoding: 'utf8' }).trim();
   if (architecture !== (packageArch === 'x64' ? 'x86_64' : 'arm64')) throw new Error('Unexpected app architecture: ' + architecture);
-  const output = { passed: true, platform: 'darwin', arch: packageArch, verificationHostArch:process.arch, version, minimumMacOS: '13.0', cameraDescription,
+  const output = { passed: true, platform: 'darwin', arch: packageArch, verificationHostArch:process.arch, version, minimumMacOS: '13.0', cameraDescription,microphoneDescription,
     signature: 'ad-hoc', notarized: false, architecture, checkedAt: new Date().toISOString() };
   const directory = path.resolve(__dirname, '..', 'docs', config.version);
   await fs.mkdir(directory, { recursive: true });

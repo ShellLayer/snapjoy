@@ -7,11 +7,11 @@ const {graphicsArgs}=require('../tools/test-graphics.cjs');
 async function launch(dataDir){
   const env={...process.env,LUMI_TEST:'1',LUMI_TEST_DATA:dataDir};delete env.ELECTRON_RUN_AS_NODE;
   const app=await electron.launch({args:[root,'--use-fake-device-for-media-stream',...graphicsArgs],env,timeout:30000});
-  const page=await app.firstWindow();await expect(page.locator('.effect-card')).toHaveCount(48);
+  const page=await app.firstWindow();await expect(page.locator('.effect-card')).toHaveCount(60);
   return {app,page};
 }
 async function temp(){return fs.mkdtemp(path.join(os.tmpdir(),'lumi-playroom-'));}
-async function activate(page){await page.locator('#startCamera').click();await expect(page.locator('#cameraStatus')).toHaveText('正在取景');}
+async function activate(page){await page.locator('#startCamera').click();await expect(page.locator('#cameraStatus')).toHaveText('正在取景');await page.locator('#aspectSelect').selectOption('4:3');}
 async function interactionCamera(page){
   // Editing and byte-for-byte composition do not require an HD stream. The main
   // camera and packaged-app tests continue to exercise the full HD resolution.
@@ -21,7 +21,7 @@ async function interactionCamera(page){
   });
 }
 
-test('all 96 stickers and 12 frames render distinctly, catalog search and categories work',async()=>{
+test('all 120 vector stickers and 24 frames render distinctly, catalog search and categories work',async()=>{
   const {app,page}=await launch(await temp());
   try{
     const results=await page.evaluate(async()=>{
@@ -32,16 +32,16 @@ test('all 96 stickers and 12 frames render distinctly, catalog search and catego
       const frames=FRAMES.filter(f=>f.id!=='none').map(f=>{c.clearRect(0,0,160,120);drawFrame(c,f.id,160,120);return {id:f.id,...hash()};});
       return {stickers,frames};
     });
-    expect(results.stickers).toHaveLength(96);
-    expect(new Set(results.stickers.map(s=>s.hash)).size).toBe(96);
+    expect(results.stickers).toHaveLength(120);
+    expect(new Set(results.stickers.map(s=>s.hash)).size).toBe(120);
     expect(results.stickers.every(s=>s.alpha>100)).toBeTruthy();
-    expect(results.frames).toHaveLength(12);
-    expect(new Set(results.frames.map(f=>f.hash)).size).toBe(12);
+    expect(results.frames).toHaveLength(24);
+    expect(new Set(results.frames.map(f=>f.hash)).size).toBe(24);
     expect(results.frames.every(f=>f.alpha>100)).toBeTruthy();
     await page.locator('#catalogSearch').fill('大头');
     await expect(page.locator('.effect-card')).toHaveCount(1);
     await page.locator('[data-panel="stickers"]').click();
-    await expect(page.locator('.sticker-card')).toHaveCount(96);
+    await expect(page.locator('.sticker-card')).toHaveCount(120);
     await page.locator('[data-sticker-category="wear"]').click();
     await expect(page.locator('.sticker-card')).toHaveCount(24);
     await page.locator('#catalogSearch').fill('眼镜');
@@ -49,7 +49,7 @@ test('all 96 stickers and 12 frames render distinctly, catalog search and catego
     await page.locator('#catalogSearch').fill('不存在的东西');
     await expect(page.locator('#noCatalogResults')).toBeVisible();
     await page.locator('[data-panel="frames"]').click();
-    await expect(page.locator('.frame-card')).toHaveCount(13);
+    await expect(page.locator('.frame-card')).toHaveCount(25);
     await page.locator('[data-panel="stickers"]').click();
     await page.locator('[data-sticker-category="all"]').click();
     await page.screenshot({path:path.join(root,'test-results','stickers-catalog.png')});

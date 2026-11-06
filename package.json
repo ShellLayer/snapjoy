@@ -1,6 +1,6 @@
 {
   "name": "snapjoy",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "SnapJoy 拾光相机 · 在电脑上留下一点好心情",
   "author": "ShellLayer",
   "private": true,
@@ -13,7 +13,7 @@
     "start": "electron .",
     "test": "playwright test",
     "pack": "electron-builder --win --x64 --dir",
-    "dist": "electron-builder --win portable --x64",
+    "dist": "electron-builder --win nsis portable --x64",
     "pack:mac": "electron-builder --mac --dir --publish never",
     "dist:mac": "electron-builder --mac dmg zip --publish never",
     "smoke:package": "node tools/smoke-package.cjs",
@@ -29,7 +29,7 @@
     "appId": "studio.lumi.booth",
     "productName": "拾光相机",
     "directories": {
-      "output": "release/1.2.0"
+      "output": "release/1.3.0"
     },
     "files": [
       "electron/**/*",
@@ -40,13 +40,17 @@
     "asar": true,
     "win": {
       "target": [
+        "nsis",
         "portable"
       ],
       "icon": "assets/icon.ico",
       "signExecutable": false
     },
     "mac": {
-      "target": ["dmg", "zip"],
+      "target": [
+        "dmg",
+        "zip"
+      ],
       "icon": "assets/icon.icns",
       "category": "public.app-category.photography",
       "minimumSystemVersion": "13.0",
@@ -57,7 +61,8 @@
       "entitlementsInherit": "build/entitlements.mac.plist",
       "artifactName": "SnapJoy-${version}-macOS-${arch}.${ext}",
       "extendInfo": {
-        "NSCameraUsageDescription": "SnapJoy 使用摄像头进行实时特效预览和拍照，画面与照片只在本机处理和保存。"
+        "NSCameraUsageDescription": "SnapJoy 使用摄像头预览、拍照和录像，画面与作品仅在本机处理和保存。",
+        "NSMicrophoneUsageDescription": "仅在您勾选「录制声音」后，SnapJoy 才会使用麦克风录制视频声音，并在停止录像时释放。"
       }
     },
     "dmg": {
@@ -65,7 +70,16 @@
       "sign": false
     },
     "portable": {
-      "artifactName": "SnapJoy-1.2.0-Windows.exe"
+      "artifactName": "SnapJoy-1.3.0-Windows.exe"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "SnapJoy 拾光相机",
+      "artifactName": "SnapJoy-${version}-Windows-Setup.${ext}",
+      "deleteAppDataOnUninstall": false
     }
   }
 }

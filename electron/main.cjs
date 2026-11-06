@@ -17,6 +17,7 @@ protocol.registerSchemesAsPrivileged([{
 let mainWindow;
 let photoDir;
 let libraryFile;
+let microphoneAllowed = false;
 let queue = Promise.resolve();
 const sourceDir = path.resolve(__dirname, '../src');
 const idPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
@@ -48,8 +49,9 @@ async function writeLibrary(items) {
   await fs.rename(temp, libraryFile);
 }
 const photoPath = (id) => path.join(photoDir, id + '.png');
+const mediaPath = (item) => path.join(photoDir, item.id + '.' + (item.kind === 'video' && ['mp4','webm'].includes(item.extension) ? item.extension : 'png'));
 const thumbPath = (id) => path.join(photoDir, '.thumbnails', id + '.jpg');
-const publicPhoto = (p) => ({ ...p, url: 'lumi://app/photo/' + p.id + '.png', thumbnail: 'lumi://app/thumb/' + p.id + '.jpg' });
+const publicPhoto = (p) => ({ ...p, url: p.kind === 'video' ? 'lumi://app/video/' + p.id + '.' + p.extension : 'lumi://app/photo/' + p.id + '.png', thumbnail: 'lumi://app/thumb/' + p.id + '.jpg' });
 
 function handle(channel, fn) {
   ipcMain.handle(channel, async (event, ...args) => {
@@ -60,10 +62,11 @@ function handle(channel, fn) {
   });
 }
 function setupHandlers() {
+  require('./video-store.cjs')({handle,serial,directory:photoDir,readLibrary,writeLibrary,publicPhoto,nativeImage});
   handle('photos:list', () => serial(async () => {
     const items = await readLibrary();
     const existing = await Promise.all(items.map(async (p) => {
-      try { await fs.access(photoPath(p.id)); return publicPhoto(p); }
+      try { await fs.access(mediaPath(p)); return publicPhoto(p); }
       catch { return null; }
     }));
     return { photos: existing.filter(Boolean), folder: photoDir };
@@ -101,8 +104,9 @@ function setupHandlers() {
   handle('photos:delete', (id) => serial(async () => {
     assertId(id);
     const items = await readLibrary();
-    if (!items.some((p) => p.id === id)) throw new Error('照片不存在。');
-    try { await fs.access(photoPath(id)); await shell.trashItem(photoPath(id)); }
+    const item = items.find(p => p.id === id);
+    if (!item) throw new Error('作品不存在。');
+    try { await fs.access(mediaPath(item)); await shell.trashItem(mediaPath(item)); }
     catch (error) { if (error.code !== 'ENOENT') throw new Error('无法移到' + (isMac ? '废纸篓' : '回收站') + '，照片仍保留在相册中。'); }
     await writeLibrary(items.filter((p) => p.id !== id));
     await fs.rm(thumbPath(id), { force: true }).catch(() => {});
@@ -110,21 +114,38 @@ function setupHandlers() {
   }));
   handle('photos:export', async (id) => {
     assertId(id);
+    const item = (await readLibrary()).find(p=>p.id===id);
+    if (!item) throw new Error('作品不存在。');
+    const extension = item.kind==='video' ? item.extension : 'png';
     const chosen = await dialog.showSaveDialog(mainWindow, {
-      title: '另存照片',
-      defaultPath: path.join(app.getPath('pictures'), '拾光-' + id.slice(0, 8) + '.png'),
-      filters: [{ name: 'PNG 图片', extensions: ['png'] }]
+      title: '另存作品',
+      defaultPath: path.join(app.getPath('pictures'), '拾光-' + id.slice(0, 8) + '.' + extension),
+      filters: [{ name: item.kind==='video' ? '视频' : 'PNG 图片', extensions: [extension] }]
     });
     if (chosen.canceled || !chosen.filePath) return false;
-    await fs.copyFile(photoPath(id), chosen.filePath);
+    await fs.copyFile(mediaPath(item), chosen.filePath);
     return true;
   });
-  handle('photos:show', (id) => { assertId(id); shell.showItemInFolder(photoPath(id)); });
+  handle('photos:show', async (id) => { assertId(id); const item=(await readLibrary()).find(p=>p.id===id); if(item)shell.showItemInFolder(mediaPath(item)); });
   handle('photos:folder', async () => {
     await fs.mkdir(photoDir, { recursive: true });
     const error = await shell.openPath(photoDir);
     if (error) throw new Error(error);
   });
+  handle('microphone:authorize', async () => {
+    microphoneAllowed = false;
+    if (isMac && !app.commandLine.hasSwitch('use-fake-device-for-media-stream')) {
+      const status = systemPreferences.getMediaAccessStatus('microphone');
+      if (status === 'denied' || status === 'restricted') return false;
+      if (status !== 'granted' && !await systemPreferences.askForMediaAccess('microphone')) return false;
+    }
+    microphoneAllowed = true;
+    return true;
+  });
+  handle('microphone:release', () => { microphoneAllowed = false; });
+  handle('microphone:settings', () => shell.openExternal(isMac
+    ? 'x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone'
+    : 'ms-settings:privacy-microphone'));
   handle('camera:authorize', async () => {
     // A fake Chromium camera needs no system device or macOS privacy prompt.
     if (!isMac || app.commandLine.hasSwitch('use-fake-device-for-media-stream')) return true;
@@ -149,11 +170,11 @@ function setupProtocol() {
       const u = new URL(request.url);
       if (u.host !== 'app' || request.method !== 'GET') return new Response('Forbidden', { status: 403 });
       const pathname = decodeURIComponent(u.pathname);
-      const media = /^\/(photo|thumb)\/([0-9a-f-]+)\.(png|jpg)$/.exec(pathname);
+      const media = /^\/(photo|thumb|video)\/([0-9a-f-]+)\.(png|jpg|mp4|webm)$/.exec(pathname);
       if (media) {
         assertId(media[2]);
-        const file = media[1] === 'photo' ? photoPath(media[2]) : thumbPath(media[2]);
-        return net.fetch(pathToFileURL(file).toString());
+        const file = media[1] === 'photo' ? photoPath(media[2]) : media[1] === 'thumb' ? thumbPath(media[2]) : path.join(photoDir,media[2]+'.'+media[3]);
+        return net.fetch(pathToFileURL(file).toString(), {headers: request.headers});
       }
       const filename = pathname === '/' ? 'index.html' : pathname.slice(1);
       const target = path.resolve(sourceDir, filename);
@@ -165,7 +186,7 @@ function setupProtocol() {
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 1320, height: 940, minWidth: 980, minHeight: 720,
+    width: 1480, height: 960, minWidth: 980, minHeight: 720,
     show: false, backgroundColor: '#f6f3ed', frame: isMac,
     ...(isMac ? { titleBarStyle: 'hidden', trafficLightPosition: { x: 16, y: 8 } } : {}),
     title: '拾光相机 · SnapJoy',
@@ -173,7 +194,7 @@ function createWindow() {
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),
       contextIsolation: true, nodeIntegration: false, sandbox: true,
-      webSecurity: true, devTools: !app.isPackaged
+      backgroundThrottling: false, webSecurity: true, devTools: !app.isPackaged
     }
   });
   mainWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
@@ -181,14 +202,14 @@ function createWindow() {
   mainWindow.webContents.on('will-prevent-unload', (event) => {
     const choice = dialog.showMessageBoxSync(mainWindow, {
       type: 'question', title: '还有一个瞬间没保存',
-      message: '正在拍摄或有照片尚未保存，仍要关闭吗？',
-      detail: '关闭后，尚未保存的照片会丢失。',
+      message: '正在拍摄或有照片、视频尚未保存，仍要关闭吗？',
+      detail: '请先停止录像并保存；强制关闭会中断当前作品。',
       buttons: ['继续拍摄 / 保存', '仍然关闭'], defaultId: 0, cancelId: 0
     });
     if (choice === 1) event.preventDefault();
   });
   mainWindow.once('ready-to-show', () => { if (!isTest) mainWindow.show(); });
-  mainWindow.on('closed', () => { mainWindow = null; });
+  mainWindow.on('closed', () => { microphoneAllowed = false; mainWindow = null; });
   mainWindow.loadURL(APP_URL);
 }
 
@@ -205,11 +226,11 @@ else {
     ]) : null);
     session.defaultSession.setPermissionRequestHandler((contents, permission, callback, details) => {
       callback(contents === mainWindow?.webContents && trusted(details.requestingUrl) &&
-        permission === 'media' && details.mediaTypes?.length > 0 && details.mediaTypes.every((type) => type === 'video'));
+        permission === 'media' && details.mediaTypes?.length > 0 && details.mediaTypes.every((type) => type === 'video' || (type === 'audio' && microphoneAllowed)));
     });
     session.defaultSession.setPermissionCheckHandler((contents, permission, origin, details) =>
       contents === mainWindow?.webContents && permission === 'media' &&
-      trusted(origin || details.securityOrigin) && details.mediaType === 'video'
+      trusted(origin || details.securityOrigin) && (details.mediaType === 'video' || (details.mediaType === 'audio' && microphoneAllowed))
     );
     setupProtocol();
     setupHandlers();

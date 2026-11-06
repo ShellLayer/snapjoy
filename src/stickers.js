@@ -1,3 +1,4 @@
+import { FACE_PROPS, drawFaceProp } from './face-props.js';
 const wearable = [
   ['bunny','兔耳朵','head'],['cat','猫耳朵','head'],['puppy','垂耳小狗','head'],['bear','小熊耳朵','head'],
   ['antlers','小鹿角','head'],['dragon','小龙角','head'],['unicorn','独角兽头饰','head'],['crown','小皇冠','head'],
@@ -14,10 +15,12 @@ const emojiGroups = {
   toys: [['火箭','🚀'],['飞碟','🛸'],['飞机','✈️'],['小汽车','🚗'],['小火车','🚂'],['直升机','🚁'],['机器人','🤖'],['泰迪熊','🧸'],['足球','⚽'],['篮球','🏀'],['游戏手柄','🎮'],['调色盘','🎨']],
   party: [['气球','🎈'],['彩纸礼炮','🎉'],['礼物盒','🎁'],['缎带','🎀'],['奖杯','🏆'],['小奖牌','🏅'],['音符','🎵'],['小铃铛','🔔'],['圣诞树','🎄'],['雪人','⛄'],['南瓜灯','🎃'],['笑哈哈','😆']]
 };
-export const STICKERS = [...wearable, ...Object.entries(emojiGroups).flatMap(([category, items]) =>
+const legacyStickers = [...Object.entries(emojiGroups).flatMap(([category, items]) =>
   items.map(([name,emoji],index)=>({id:category+'-'+index,name,emoji,category,aspect:1}))
 )];
-export const STICKER_CATEGORIES = [['all','全部'],['wear','变装'],['animals','动物'],['nature','自然'],['magic','魔法'],['food','甜点'],['toys','玩具'],['party','派对']];
+export const STICKERS = [...wearable, ...FACE_PROPS];
+export const ANCHORS = [['default','素材推荐'],['head','头顶'],['forehead','额头'],['eyes','双眼'],['leftEye','画面左眼'],['rightEye','画面右眼'],['nose','鼻子'],['mouth','嘴部'],['cheeks','双颊'],['leftCheek','画面左脸颊'],['rightCheek','画面右脸颊'],['chin','下巴'],['face','整张脸'],['neck','脖子']];
+export const STICKER_CATEGORIES = [['all','全部'],['wear','经典'],['animals','动物'],['hats','帽子'],['eyewear','眼镜'],['paint','面饰'],['magic','魔法'],['accessories','配饰']];
 export const FRAMES = [
   {id:'none',name:'不加相框',colors:['#eeeade']},
   {id:'instant',name:'拍立得',colors:['#fff9e8']},
@@ -33,7 +36,9 @@ export const FRAMES = [
   {id:'arcade',name:'像素冒险',colors:['#353e55','#82d5ad']},
   {id:'winter',name:'冬日童话',colors:['#b5d9e8','#fff7ef']}
 ];
-const byId = new Map(STICKERS.map(s=>[s.id,s]));
+const extraFrames = [['film','电影胶卷','#444252','#eed4a1'],['bubbles','泡泡时光','#9ed3e4','#e5c3e0'],['hearts','心动派对','#e8adbe','#fff1dc'],['botanical','植物标本','#94b99d','#f1e3ba'],['butterflies','蝴蝶花园','#c6b3d8','#eecab5'],['sports','运动日','#81bab4','#f0d488'],['neon','霓虹舞台','#483c68','#d799ce'],['chalk','粉笔小黑板','#45635c','#c3d7b3'],['cherry','樱桃甜心','#e8a29c','#f5dec2'],['clouds','云端日记','#acc9e1','#f9ebdb'],['scrapbook','手帐拼贴','#d5bb91','#e3d5b6'],['festival','星灯庆典','#b7a5d1','#f4d29b']];
+FRAMES.push(...extraFrames.map(([id,name,a,b])=>({id,name,colors:[a,b],vector:true})));
+const byId = new Map([...legacyStickers,...STICKERS].map(s=>[s.id,s]));
 export const stickerById = id => byId.get(id);
 const cache = new Map();
 function path(c,d,fill,stroke='#654c55',width=4) {
@@ -160,7 +165,7 @@ export function stickerImage(def) {
   const c=canvas.getContext('2d');
   if(def.emoji){
     c.textAlign='center';c.textBaseline='middle';c.font='390px "Segoe UI Emoji", "Apple Color Emoji", sans-serif';c.fillText(def.emoji,240,258);
-  }else{c.scale(canvas.width/200,canvas.height/160);drawWear(c,def.id);}
+  }else{c.scale(canvas.width/200,canvas.height/160);if(def.design)drawFaceProp(c,def);else drawWear(c,def.id);}
   cache.set(def.id,canvas);return canvas;
 }
 export function drawSticker(c,def,x,y,width,rotation=0) {
@@ -181,7 +186,23 @@ export function drawFrame(c,frameId,width,height) {
     x.fillStyle=f.colors[0];
     x.fillRect(0,0,width,border);x.fillRect(0,height-border,width,border);x.fillRect(0,0,border,height);x.fillRect(width-border,0,border,height);
     const stamp=(emoji,px,py,size=40,angle=0)=>{x.save();x.translate(px*width,py*height);x.rotate(angle);x.font=size*unit+'px "Segoe UI Emoji", "Apple Color Emoji", sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText(emoji,0,0);x.restore();};
-    if(frameId==='instant'){
+    if(f.vector){
+      const col=f.colors[1],u=Math.min(width,height)/600;
+      const mark=(id,px,py,size=70,angle=0)=>drawSticker(x,stickerById(id),px*width,py*height,size*u,angle);
+      x.strokeStyle=col;x.lineWidth=4*u;x.strokeRect(10*u,10*u,width-20*u,height-20*u);
+      if(frameId==='film'){for(let y=10*u;y<height;y+=32*u){x.fillStyle=col;x.fillRect(6*u,y,12*u,18*u);x.fillRect(width-18*u,y,12*u,18*u);}}
+      if(frameId==='bubbles'){for(let i=0;i<16;i++)ellipse(x,(i%2?.95:.05)*width,(.06+i*.057)*height,(8+i%3*7)*u,(8+i%3*7)*u,null,col);}
+      if(frameId==='hearts'){for(let i=0;i<10;i++)heart(x,(i+.5)*width/10,(i%2?.96:.04)*height,22*u,col,null);}
+      if(frameId==='botanical'){[.06,.94].forEach(px=>[.1,.9].forEach(py=>mark('prop-magic-leafcrown',px,py,110,px<.5?-.5:.5)));}
+      if(frameId==='butterflies'){[.08,.92].forEach(px=>[.12,.88].forEach(py=>mark('prop-paint-butterfly',px,py,115,px<.5?-.35:.35)));}
+      if(frameId==='sports'){for(let i=0;i<12;i++){x.strokeStyle=col;x.lineWidth=5*u;x.beginPath();x.arc((i+.5)*width/12,(i%2?.96:.04)*height,12*u,0,Math.PI*2);x.stroke();}mark('prop-accessories-headphone',.09,.88,100);}
+      if(frameId==='neon'){for(let i=0;i<3;i++){x.strokeStyle=['#b9a0ef','#f0a3cc','#8ecfd4'][i];x.lineWidth=3*u;x.strokeRect((6+i*7)*u,(6+i*7)*u,width-(12+i*14)*u,height-(12+i*14)*u);}mark('prop-eyewear-visor',.88,.09,105);}
+      if(frameId==='chalk'){x.setLineDash([8*u,6*u]);x.strokeStyle='#e7edd2';x.strokeRect(17*u,17*u,width-34*u,height-34*u);x.setLineDash([]);mark('prop-paint-stars',.1,.12,130);mark('prop-hats-graduate',.9,.89,110);}
+      if(frameId==='cherry'){for(let i=0;i<8;i++){let px=(i+.5)*width/8,py=(i%2?.95:.05)*height;ellipse(x,px-6*u,py,8*u,8*u,'#ce7b82');ellipse(x,px+9*u,py+4*u,8*u,8*u,'#da9298');path(x,`M${px-6*u} ${py-6*u} Q${px} ${py-27*u} ${px+9*u} ${py-4*u}`,null,'#799878',2*u);}}
+      if(frameId==='clouds'){[.08,.92].forEach(px=>[.09,.91].forEach(py=>mark('prop-eyewear-cloud',px,py,105)));}
+      if(frameId==='scrapbook'){for(let i=0;i<4;i++){x.save();x.translate((i%2?.94:.06)*width,(i<2?.055:.945)*height);x.rotate(i%2?-.5:.5);x.fillStyle=col;x.fillRect(-38*u,-10*u,76*u,20*u);x.restore();}mark('prop-paint-rose',.9,.87,100);}
+      if(frameId==='festival'){for(let i=0;i<14;i++){const px=(i+.5)*width/14;path(x,`M${px} 0 L${px} ${(22+i%3*13)*u}`,null,col,2*u);star(x,px,(28+i%3*13)*u,9*u,col);}mark('prop-magic-moon',.1,.89,110);}
+    }else if(frameId==='instant'){
       x.fillRect(0,height-68*unit,width,68*unit);x.fillStyle='#988e7c';x.textAlign='center';x.font=14*unit+'px Georgia';x.fillText('LITTLE MOMENTS, BIG SMILES',width/2,height-26*unit);
     }else if(frameId==='rainbow'){
       f.colors.forEach((color,i)=>{x.strokeStyle=color;x.lineWidth=5*unit;x.strokeRect((i*5+2)*unit,(i*5+2)*unit,width-(i*10+4)*unit,height-(i*10+4)*unit);});
@@ -225,21 +246,26 @@ export function drawFrame(c,frameId,width,height) {
   c.drawImage(frame,0,0,width,height);
 }
 
-export function facePlacement(def,face) {
-  const w=face.width, h=face.height, eyes=face.eyes;
+export function facePlacement(def,face,anchor=def.anchor,aspect=4/3) {
+  const w=face.width,h=face.height,eyes=face.eyes,angle=face.rotation;
   let x=face.x+w/2,y=face.y+h/2,width=w*1.2;
-  if(def.anchor==='head'){x=eyes.x;y=eyes.y-h*.63;width=w*1.4;}
-  if(def.anchor==='eyes'){x=eyes.x;y=eyes.y;width=face.eyeDistance*2.75;}
-  if(def.anchor==='nose'){x=face.nose.x;y=face.nose.y;width=w*(def.id==='whiskers'?1.25:.52);}
-  if(def.anchor==='mouth'){x=face.mouth.x;y=(face.mouth.y+face.nose.y)/2;width=w*.75;}
-  if(def.anchor==='cheeks'){x=eyes.x;y=face.nose.y;width=w*1.2;}
-  if(def.anchor==='face'){width=w*1.5;y=eyes.y+h*.25;}
-  return {x,y,width,rotation:face.rotation};
+  if(anchor==='head'){x=eyes.x;y=eyes.y-h*.63;width=w*1.4;}
+  if(anchor==='forehead'){x=eyes.x;y=eyes.y-h*.3;width=w*.65;}
+  if(anchor==='eyes'){x=eyes.x;y=eyes.y;width=face.eyeDistance*2.75;}
+  if(anchor==='leftEye'||anchor==='rightEye'){const sign=anchor==='leftEye'?-1:1;x=eyes.x+sign*face.eyeDistance/2*Math.cos(angle);y=eyes.y+sign*face.eyeDistance/2*Math.sin(angle)*aspect;width=w*.5;}
+  if(anchor==='nose'){x=face.nose.x;y=face.nose.y;width=w*(def.id==='whiskers'?1.25:.52);}
+  if(anchor==='mouth'){x=face.mouth.x;y=(face.mouth.y+face.nose.y)/2;width=w*.75;}
+  if(anchor==='cheeks'){x=eyes.x;y=face.nose.y;width=w*1.2;}
+  if(anchor==='leftCheek'||anchor==='rightCheek'){x=face.nose.x+(anchor==='leftCheek'?-1:1)*w*.34;y=face.nose.y+h*.09;width=w*.45;}
+  if(anchor==='chin'){x=face.mouth.x;y=face.mouth.y+h*.33;width=w*.95;}
+  if(anchor==='neck'){x=face.mouth.x;y=face.y+h*1.22;width=w*1.2;}
+  if(anchor==='face'){width=w*1.5;y=eyes.y+h*.25;}
+  return {x,y,width:width*(def.anchorScale||1),rotation:angle};
 }
 
 export class DecorationScene {
   constructor(onChange=()=>{}) {
-    this.nodes=[];this.frame='none';this.selected=null;this.face=null;this.history=[];this.onChange=onChange;
+    this.aspect=4/3;this.nodes=[];this.frame='none';this.selected=null;this.face=null;this.history=[];this.onChange=onChange;
   }
   snapshot(){return {nodes:this.nodes.map(n=>({...n})),frame:this.frame};}
   remember(){this.history.push(this.snapshot());if(this.history.length>30)this.history.shift();}
@@ -248,7 +274,8 @@ export class DecorationScene {
     this.nodes=(Array.isArray(data?.nodes)?data.nodes:[]).filter(n=>n&&byId.has(n.stickerId)).slice(0,20).map(n=>({
       uid:crypto.randomUUID(),stickerId:n.stickerId,x:clamp(n.x,.0,1,.5),y:clamp(n.y,0,1,.4),
       width:clamp(n.width,.07,.95,.3),rotation:clamp(n.rotation,-Math.PI,Math.PI,0),
-      follow:!!n.follow,scale:clamp(n.scale,.35,2.5,1)
+      follow:!!n.follow,scale:clamp(n.scale,.35,2.5,1),
+      anchor:ANCHORS.some(a=>a[0]===n.anchor)?n.anchor:'default',offsetX:clamp(n.offsetX,-1,1,0),offsetY:clamp(n.offsetY,-1,1,0)
     }));
     this.frame=FRAMES.some(f=>f.id===data?.frame)?data.frame:'none';this.selected=null;
   }
@@ -257,13 +284,13 @@ export class DecorationScene {
     const def=byId.get(id);if(!def)return null;
     this.remember();
     const offset=(this.nodes.filter(n=>!n.follow).length%5)*.055;
-    const node={uid:crypto.randomUUID(),stickerId:id,x:def.anchor ? .5 : .5+offset,y:def.anchor==='head' ? .23 : def.anchor==='eyes' ? .43 : .56-offset,width:def.anchor ? .35 : .23,rotation:0,follow:!!def.anchor,scale:1};
+    const node={uid:crypto.randomUUID(),stickerId:id,x:def.anchor ? .5 : .5+offset,y:def.anchor==='head' ? .23 : def.anchor==='eyes' ? .43 : .56-offset,width:def.anchor ? .35 : .23,rotation:0,follow:!!def.anchor,scale:1,anchor:'default',offsetX:0,offsetY:0};
     this.nodes.push(node);this.selected=node.uid;this.changed();return node;
   }
   get current(){return this.nodes.find(n=>n.uid===this.selected);}
   placement(node){
     const def=byId.get(node.stickerId);
-    if(node.follow&&this.face){const p=facePlacement(def,this.face);return {...p,width:p.width*node.scale,rotation:p.rotation+node.rotation};}
+    if(node.follow&&this.face){const p=facePlacement(def,this.face,node.anchor==='default'||!node.anchor?def.anchor:node.anchor,this.aspect),w=this.face.width,ox=node.offsetX||0,oy=node.offsetY||0,a=p.rotation;return {...p,x:p.x+w*(ox*Math.cos(a)-oy*Math.sin(a)),y:p.y+w*this.aspect*(ox*Math.sin(a)+oy*Math.cos(a)),width:p.width*node.scale,rotation:p.rotation+node.rotation};}
     return {x:node.x,y:node.y,width:node.width*(node.follow?node.scale:1),rotation:node.rotation};
   }
   update(values,remember=true){const n=this.current;if(!n)return;if(remember)this.remember();Object.assign(n,values);this.changed();}
@@ -276,7 +303,7 @@ export class DecorationScene {
   hit(x,y) {
     for(const node of [...this.nodes].reverse()){
       const p=this.placement(node),def=byId.get(node.stickerId);
-      const dx=x-p.x,dy=(y-p.y)*.75;
+      const dx=x-p.x,dy=(y-p.y)/this.aspect;
       const xx=dx*Math.cos(p.rotation)+dy*Math.sin(p.rotation),yy=-dx*Math.sin(p.rotation)+dy*Math.cos(p.rotation);
       if(Math.abs(xx)<=p.width/2&&Math.abs(yy)<=p.width/def.aspect/2)return node;
     }return null;

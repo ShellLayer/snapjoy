@@ -31,7 +31,7 @@ const delay = (ms) => new Promise(resolve=>setTimeout(resolve,ms));
       cameraOff:document.querySelector('#cameraVideo').srcObject===null,
       startEnabled:!document.querySelector('#startCamera').disabled
     }));
-    if(result.title!=='拾光相机 · SnapJoy'||result.effects!==48||!result.cameraOff||!result.startEnabled)throw new Error(JSON.stringify(result));
+    if(result.title!=='拾光相机 · SnapJoy'||result.effects!==60||!result.cameraOff||!result.startEnabled)throw new Error(JSON.stringify(result));
     await fs.mkdir(path.join(root,'docs',config.version),{recursive:true});
     await fs.writeFile(path.join(root,'docs',config.version,'portable-verification.json'),JSON.stringify({passed:true,version:config.version,...result,checkedAt:new Date().toISOString()},null,2));
     console.log(JSON.stringify({passed:true,portable:true,...result}));
