@@ -199,7 +199,11 @@ test('high-resolution camera frames encode playable video at all five aspect rat
         x.fillStyle='#d58b62';x.fillRect(0,0,320,180);
         await recorder.start({width,height,microphone:false,metadata:{},paint:(c,w,h)=>c.drawImage(source,0,0,w,h)});
         let frame=0;const timer=setInterval(()=>{x.fillStyle=frame++%2?'#7aa793':'#d58b62';x.fillRect(0,0,320,180);recorder.paint(source,{draw(){}});},100);
-        await new Promise(resolve=>setTimeout(resolve,2400));clearInterval(timer);recorder.stop();
+        // Shared CI machines may spend several seconds warming up the encoder.
+        // Wait for a real encoded chunk instead of ending before its first frame.
+        const deadline=performance.now()+30000;
+        while(!recorder.totalBytes&&recorder.state==='recording'&&performance.now()<deadline)await new Promise(resolve=>setTimeout(resolve,100));
+        clearInterval(timer);recorder.stop();
         const item=await done,video=document.createElement('video');
         await new Promise((resolve,reject)=>{
           const timeout=setTimeout(()=>reject(new Error('High-resolution video did not decode: '+aspect)),20000);
