@@ -1,0 +1,6 @@
+3742e7d47ccfe39965410af541d80a4e0f8660b74907d1ea59807462c315cc86  SnapJoy-1.4.0-Windows-Setup.exe
+39f0f9277c6d76c775c525091b9231fda7f5e8140cbe05e69106947548ec5eca  SnapJoy-1.4.0-Windows.exe
+db154a7aaa5f938b3734c59cb48f6736034d757be84b5ab5b7f38a00ea7bc92e  SnapJoy-1.4.0-macOS-arm64.dmg
+9dd231abb06a8aed5c43ebbd78991163a6b3daf9b525c073da4a026aa8d4cc83  SnapJoy-1.4.0-macOS-arm64.zip
+b3f58a7e295da2aa2f2fe6e8bce5cb4a3b5e1c967271bb03f44ab683786bbb2c  SnapJoy-1.4.0-macOS-x64.dmg
+9fcd41f03e0bdbb2411cb2692589044eb3ceecb0ffeeb3770d1fd0e1076ea800  SnapJoy-1.4.0-macOS-x64.zip

@@ -1,0 +1,55 @@
+{
+  "passed": true,
+  "version": "1.4.0",
+  "sourceCommit": "430d8f206be53720c21b251e27f240d4bed09c56",
+  "workflowRun": "https://github.com/ShellLayer/snapjoy/actions/runs/42298182788",
+  "release": "https://github.com/ShellLayer/snapjoy/releases/tag/v1.4.0",
+  "prerelease": true,
+  "authenticatedMetadataFallback": true,
+  "publishedChecksumFileMatchesLocal": true,
+  "checkedAt": "2026-11-06T22:07:23.127255+00:00",
+  "assets": [
+    {
+      "name": "SnapJoy-1.4.0-Windows-Setup.exe",
+      "bytes": 127693141,
+      "sha256": "3742e7d47ccfe39965410af541d80a4e0f8660b74907d1ea59807462c315cc86",
+      "anonymousDownloadStatus": 200,
+      "url": "https://github.com/ShellLayer/snapjoy/releases/download/v1.4.0/SnapJoy-1.4.0-Windows-Setup.exe"
+    },
+    {
+      "name": "SnapJoy-1.4.0-Windows.exe",
+      "bytes": 113484933,
+      "sha256": "39f0f9277c6d76c775c525091b9231fda7f5e8140cbe05e69106947548ec5eca",
+      "anonymousDownloadStatus": 200,
+      "url": "https://github.com/ShellLayer/snapjoy/releases/download/v1.4.0/SnapJoy-1.4.0-Windows.exe"
+    },
+    {
+      "name": "SnapJoy-1.4.0-macOS-arm64.dmg",
+      "bytes": 128466605,
+      "sha256": "db154a7aaa5f938b3734c59cb48f6736034d757be84b5ab5b7f38a00ea7bc92e",
+      "anonymousDownloadStatus": 200,
+      "url": "https://github.com/ShellLayer/snapjoy/releases/download/v1.4.0/SnapJoy-1.4.0-macOS-arm64.dmg"
+    },
+    {
+      "name": "SnapJoy-1.4.0-macOS-arm64.zip",
+      "bytes": 124643314,
+      "sha256": "9dd231abb06a8aed5c43ebbd78991163a6b3daf9b525c073da4a026aa8d4cc83",
+      "anonymousDownloadStatus": 200,
+      "url": "https://github.com/ShellLayer/snapjoy/releases/download/v1.4.0/SnapJoy-1.4.0-macOS-arm64.zip"
+    },
+    {
+      "name": "SnapJoy-1.4.0-macOS-x64.dmg",
+      "bytes": 135468770,
+      "sha256": "b3f58a7e295da2aa2f2fe6e8bce5cb4a3b5e1c967271bb03f44ab683786bbb2c",
+      "anonymousDownloadStatus": 200,
+      "url": "https://github.com/ShellLayer/snapjoy/releases/download/v1.4.0/SnapJoy-1.4.0-macOS-x64.dmg"
+    },
+    {
+      "name": "SnapJoy-1.4.0-macOS-x64.zip",
+      "bytes": 131641455,
+      "sha256": "9fcd41f03e0bdbb2411cb2692589044eb3ceecb0ffeeb3770d1fd0e1076ea800",
+      "anonymousDownloadStatus": 200,
+      "url": "https://github.com/ShellLayer/snapjoy/releases/download/v1.4.0/SnapJoy-1.4.0-macOS-x64.zip"
+    }
+  ]
+}

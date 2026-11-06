@@ -1,0 +1,14 @@
+{
+  "passed": true,
+  "platform": "darwin",
+  "arch": "arm64",
+  "verificationHostArch": "arm64",
+  "version": "1.4.0",
+  "minimumMacOS": "13.0",
+  "cameraDescription": "SnapJoy 使用摄像头预览、拍照和录像，画面与作品仅在本机处理和保存。",
+  "microphoneDescription": "仅在您勾选「录制声音」后，SnapJoy 才会使用麦克风录制视频声音，并在停止录像时释放。",
+  "signature": "ad-hoc",
+  "notarized": false,
+  "architecture": "arm64",
+  "checkedAt": "2026-11-06T21:40:32.055Z"
+}
