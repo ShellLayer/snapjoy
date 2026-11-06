@@ -14,6 +14,13 @@ on:
         options:
           - macos-15
           - macos-26
+      checks:
+        description: Full suite, or camera/video regression after a verified full baseline
+        type: choice
+        default: full
+        options:
+          - full
+          - studio
   push:
     tags:
       - 'v*'
@@ -65,7 +72,11 @@ jobs:
       - name: Select available test graphics backend
         run: node tools/probe-graphics.cjs
       - name: Run functional and platform tests
+        if: inputs.checks != 'studio'
         run: npm test
+      - name: Run camera and recording regression tests
+        if: inputs.checks == 'studio'
+        run: npm test -- tests/studio.spec.cjs
       - name: Build native packages
         run: ${{ matrix.command }}
       - name: Verify macOS bundle metadata and signature

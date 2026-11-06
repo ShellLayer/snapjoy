@@ -183,13 +183,15 @@ function renderThumbnails() {
 }
 function resolution() {
   const max=settings.mode==='video'||settings.mode==='strip'?1920:3840;
-  return outputSize(video.videoWidth||1920,video.videoHeight||1080,ASPECTS[settings.aspect],Math.min(settings.size||max,max));
+  // H.264 Level 4 supports 1080p, but not a 1920 x 1920 square. Keep every
+  // aspect within the same pixel budget, including a camera left in 4K mode.
+  return outputSize(video.videoWidth||1920,video.videoHeight||1080,ASPECTS[settings.aspect],Math.min(settings.size||max,max),settings.mode==='video'?1920*1080:Infinity);
 }
 function updateResolutionLabel(){
   if(!running)return;
   const [w,h]=resolution();
   $('resolutionLabel').textContent=w+' × '+h+' · '+(settings.mode==='video'?'录像':'照片');
-  $('resolutionLabel').title='实际保存尺寸；根据摄像头原生画面居中裁切，不拉伸、不放大。录像与四连拍单格最长边 1920。';
+  $('resolutionLabel').title='实际保存尺寸；根据摄像头原生画面居中裁切，不拉伸、不放大。录像按画幅自动适配，最长边 1920，方形最高 1440 × 1440；四连拍单格最长边 1920。';
 }
 
 function renderMain() {

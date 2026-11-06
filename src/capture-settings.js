@@ -5,9 +5,9 @@ export function cropRect(width, height, aspect) {
   const w = Math.min(width, height * aspect), h = w / aspect;
   return { x: (width-w)/2, y: (height-h)/2, width: w, height: h };
 }
-export function outputSize(width, height, aspect, limit = 0) {
+export function outputSize(width, height, aspect, limit = 0, pixelLimit = Infinity) {
   const crop = cropRect(width, height, aspect);
-  const scale = Math.min(1, limit > 0 ? limit / Math.max(crop.width, crop.height) : 1);
+  const scale = Math.min(1, limit > 0 ? limit / Math.max(crop.width, crop.height) : 1, Math.sqrt(pixelLimit/(crop.width*crop.height)));
   // Even dimensions are required by common video encoders; never invent detail.
   return [Math.max(2, Math.floor(crop.width*scale/2)*2), Math.max(2, Math.floor(crop.height*scale/2)*2)];
 }

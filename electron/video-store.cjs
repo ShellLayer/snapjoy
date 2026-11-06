@@ -9,7 +9,7 @@ module.exports=function setupVideos({handle,serial,directory,readLibrary,writeLi
   const get=id=>{if(typeof id!=='string'||!sessions.has(id))throw new Error('录像会话无效。');return sessions.get(id);};
   handle('videos:begin',payload=>serial(async()=>{
     if(sessions.size)throw new Error('请先保存上一段录像。');
-    if(!payload||!['mp4','webm'].includes(payload.extension)||![payload.width,payload.height].every(n=>Number.isInteger(n)&&n>=2&&n<=1920))throw new Error('录像格式或尺寸无效。');
+    if(!payload||!['mp4','webm'].includes(payload.extension)||![payload.width,payload.height].every(n=>Number.isInteger(n)&&n>=2&&n<=1920)||payload.width*payload.height>1920*1080)throw new Error('录像格式或尺寸无效。');
     await fs.mkdir(folder,{recursive:true});
     const id=randomUUID(),extension=payload.extension;
     const item={id,kind:'video',mode:'video',extension,createdAt:new Date().toISOString(),width:payload.width,height:payload.height,audio:payload.audio===true,

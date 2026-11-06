@@ -182,6 +182,43 @@ test('full HD encoding produces a decodable file and microphone denial leaves re
   }finally{await close(app);}
 });
 
+test('high-resolution camera frames encode playable video at all five aspect ratios',async()=>{
+  const {app,page}=await launch();
+  try{
+    const results=await page.evaluate(async()=>{
+      const {outputSize,ASPECTS}=await import('./capture-settings.js');
+      const {BoothRecorder}=await import('./recorder.js');
+      const source=document.createElement('canvas');source.width=320;source.height=180;
+      const x=source.getContext('2d'),results=[];
+      const photoSquare=outputSize(3840,2160,1,3840);
+      let unsafeRejected=false;try{await window.booth.beginVideo({extension:'mp4',width:1920,height:1920});}catch{unsafeRejected=true;}
+      for(const aspect of ['16:9','4:3','1:1','3:4','9:16']){
+        const [width,height]=outputSize(3840,2160,ASPECTS[aspect],1920,1920*1080);
+        let saved,failed;const done=new Promise((resolve,reject)=>{saved=resolve;failed=reject;});
+        const recorder=new BoothRecorder(window.booth,()=>{},saved,failed);
+        x.fillStyle='#d58b62';x.fillRect(0,0,320,180);
+        await recorder.start({width,height,microphone:false,metadata:{},paint:(c,w,h)=>c.drawImage(source,0,0,w,h)});
+        let frame=0;const timer=setInterval(()=>{x.fillStyle=frame++%2?'#7aa793':'#d58b62';x.fillRect(0,0,320,180);recorder.paint(source,{draw(){}});},100);
+        await new Promise(resolve=>setTimeout(resolve,2400));clearInterval(timer);recorder.stop();
+        const item=await done,video=document.createElement('video');
+        await new Promise((resolve,reject)=>{
+          const timeout=setTimeout(()=>reject(new Error('High-resolution video did not decode: '+aspect)),20000);
+          video.onloadeddata=()=>{clearTimeout(timeout);resolve();};
+          video.onerror=()=>{clearTimeout(timeout);reject(new Error('High-resolution video decode failed: '+aspect));};
+          video.src=item.url;video.load();
+        });
+        results.push({aspect,width:video.videoWidth,height:video.videoHeight,format:item.extension,bytes:item.bytes});
+        video.removeAttribute('src');video.load();
+      }
+      return {photoSquare,unsafeRejected,videos:results};
+    });
+    expect(results.photoSquare).toEqual([2160,2160]);expect(results.unsafeRejected).toBe(true);
+    expect(results.videos.map(v=>[v.width,v.height])).toEqual([[1920,1080],[1662,1246],[1440,1440],[1246,1662],[1080,1920]]);
+    expect(results.videos.every(v=>v.bytes>1000)).toBe(true);
+    console.log('High-resolution video verification',JSON.stringify(results));
+  }finally{await close(app);}
+});
+
 test('a failed video chunk is retried in order without losing the video header',async()=>{
   const {app,page}=await launch();
   try{
